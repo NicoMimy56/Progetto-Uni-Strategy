@@ -1,90 +1,104 @@
-# Progetto-Uni-Strategy
-## Il tuo percorso accademico, sotto controllo.
+# 🎓 Progetto: Uni-Strategy (Student OS)
+**Versione:** 1.0 (Hybrid Tech Stack)
+**Stato:** 🚧 In Sviluppo
+
+## 📖 Visione del Progetto
+**"Il tuo percorso accademico, sotto controllo."**
 
 L'università non è solo studiare: è gestire scadenze, calcolare medie e pianificare strategie. Spesso l'ansia nasce non dalla difficoltà degli esami, ma dal non sapere esattamente a che punto siamo.
+Questo progetto non è un semplice planner. È un **Sistema Operativo Ibrido** progettato con mentalità ingegneristica per dare allo studente il controllo totale sulla carriera universitaria, unendo l'organizzazione visiva alla potenza di calcolo e automazione.
 
-Questo template non è un semplice planner. È uno strumento progettato con mentalità ingegneristica per darti il controllo totale sulla tua carriera universitaria.
-
-### Cosa fa per te:
-
-* **👁️ Visualizza il Futuro:** Un cruscotto centrale che trasforma date sparse in un piano d'azione chiaro, passando dalla visione mensile alla gestione dei task giornalieri.
-* **⚙️ Calcola la Strategia:** Niente più calcolatrici manuali. Il motore integrato traccia la tua media ponderata e i tuoi CFU in tempo reale.
-* **🔮 Simula Scenari:** Vuoi sapere che voto devi prendere per mantenere la tua media? Il simulatore ti permette di prevedere l'impatto dei prossimi esami sui tuoi obiettivi di laurea.
-
-> **Meno tempo per organizzare, più energia per studiare. Benvenuto nel tuo nuovo metodo.**
+### Cosa risolviamo:
+* **👁️ Visualizzazione:** Un cruscotto centrale che trasforma date sparse in un piano d'azione chiaro.
+* **⚙️ Strategia:** Calcolo automatico di media ponderata e CFU (niente calcoli manuali).
+* **🔮 Simulazione:** Previsione dell'impatto dei voti futuri sulla media di laurea.
+* **🔔 Automazione:** Notifiche intelligenti (Telegram) per scadenze imminenti.
 
 ---
 
-## 🛠️ Riassunto Tecnico del Progetto
+## 🏗️ Architettura Tecnica
 
-Stiamo costruendo un **Sistema Operativo Ibrido** che unisce:
+Il sistema si basa su tre pilastri integrati:
 
-### 1. Il "Cervello" (Notion) 🧠
-Gestisce l'organizzazione visiva e il flusso di lavoro.
-* **Database Master:** Esami, scadenze, To-Do list.
-* **Viste:** Calendario (Timeline) + Kanban Board (Stato avanzamento).
-
-### 2. Il "Motore" (Google Sheets) 🏎️
-Gestisce i calcoli complessi e le previsioni (Embedded in Notion).
-* **Funzioni:** Media ponderata automatica, tracking CFU, simulatore voto.*
----
-
-## 🏗️ Student OS: Specifiche Tecniche del Progetto
-**Versione:** 1.0 - The "Engineering Approach"
-
-### 🎯 Visione del Progetto
-Creare il "Sistema Operativo Definitivo" per lo studente universitario. Un prodotto digitale che elimina il caos organizzativo unendo l'estetica di Notion alla potenza di calcolo di Google Sheets.
-* **Filosofia:** "Non insegniamo la materia, forniamo la macchina per gestirla." (Approccio No-Teacher)
-* **Target:** Studenti universitari che necessitano di monitorare Media Ponderata e CFU.
+1.  **Frontend Organizzativo (Notion):** Gestione visiva, note, materiali di studio e Kanban board.
+2.  **Frontend Mobile (Glide Apps):** Interfaccia rapida da telefono per consultare voti e ricevere status.
+3.  **Backend & Logic (Google Sheets + Apps Script):** Il "motore" che gestisce i dati, i calcoli complessi e invia le notifiche al bot Telegram.
 
 ---
 
-### 🧠 Il Cervello: Architettura Notion (Frontend)
-La parte visiva dove l'utente passa il 90% del tempo.
+## 🛠️ Specifiche Tecniche (The Blueprint)
 
-### 1. Il Database Master ("Centro di Controllo")
-Un unico archivio centrale contenente tutte le scadenze e gli esami.
-* **Proprietà (Colonne) Essenziali:**
-    * 🏷️ **Nome Attività:** (es. "Analisi 1", "Consegna Progetto")
-    * 📅 **Data:** (Data esame o scadenza)
-    * 📂 **Tipo:** (Select: Scritto, Orale, Progetto, Parziale)
-    * 🚦 **Priorità:** (Select: Alta, Media, Bassa) - *Per ordinare le task nei momenti di crisi.*
-    * ⚖️ **Peso/CFU:** (Number) - *Cruciale per il collegamento con il motore di calcolo.*
-    * ✅ **Stato:** (Status: Da fare, In corso, Ripasso, Fatto) - *Fondamentale per la vista Board.*
+### 1. Il Database & Motore (Google Sheets)
+*Il cuore del sistema. Tutto parte da qui.*
 
-### 2. Le Viste Strategiche (Dashboard)
-Come i dati vengono presentati all'utente nella Home Page:
-* **Vista 1: Timeline Mensile (Calendario)**
-    * *Obiettivo:* Visione d'insieme per non perdere le scadenze.
-* **Vista 2: Focus Flow (Kanban Board)**
-    * *Obiettivo:* Gestione operativa. L'utente trascina le card da "Da fare" a "Fatto".
-    * *Transizione:* Switch fluido tra le due viste tramite tab.
+* **Tab `DB_Esami`:**
+    * `ID_Materia`: Identificativo univoco.
+    * `Materia`: Nome del corso.
+    * `CFU`: Peso in crediti (Fondamentale per la media ponderata).
+    * `Voto`: Input numerico (30L = 31 o logica separata).
+    * `Data_Appello`: Data esame.
+    * `Stato`: Dropdown (Da dare, Preparazione, Fatto).
+    * `Giorni_Mancanti`: Formula array (`Data - OGGI`).
+* **Calcoli Core:**
+    * **Media Ponderata:** `SUMPRODUCT(Voti, CFU) / SUM(CFU_Totali)`.
+    * **Grafici:** Grafico andamento media temporale + Pie chart crediti acquisiti vs mancanti.
+* **Funzioni Premium (Simulatore):**
+    * Logica "What If": Calcolo dinamico della media inserendo un voto ipotetico.
 
-### 3. Moduli Aggiuntivi Integrati
-* **Diario di Bordo:** To-Do list giornaliera collegata al database principale.
-* **Gestore Corsi:** Spazio minimale per link e info logistiche (senza eccessivi dettagli manuali).
+### 2. Il Cervello Visivo (Notion)
+*L'ambiente di studio desktop.*
 
----
+* **Database Master:** Embeddato o sincronizzato.
+* **Viste:**
+    * 📅 *Timeline Mensile:* Per scadenze a lungo termine.
+    * 📋 *Kanban Board:* Workflow operativo (To Do -> Doing -> Done).
+* **Moduli:** Diario di bordo giornaliero e archivio link/materiali per corso.
 
-## 🏎️ Il Motore: Architettura Google Sheets (Backend)
-La parte logica, nascosta o "embedded" nella pagina Notion.
+### 3. L'Automazione Mobile (Glide + Apps Script)
+*L'assistente tascabile.*
 
-### 1. Funzioni "Core" (L'Analisi Attuale)
-* **Calcolatore Media Ponderata:**
-    * Logica: `(Somma(Voto * CFU)) / (Somma CFU Totali)` -> mettendo anche il grafico della media
-    * Aggiornamento automatico all'inserimento dei dati.
-* **Tracker CFU:**
-    * Visualizzazione grafica (Barra di progresso o Percentuale) per indicare quanto manca alla laurea.
-
-### 2. Funzioni "Premium" (La Strategia Futura)
-* **Il Simulatore "What If":**
-    * Input utente: Voto ipotetico nel prossimo esame.
-    * Output immediato: Come cambierebbe la media e il voto di partenza alla laurea.
-* **Il Previsore (Target):**
-    * Calcolo inverso: "Che media devo tenere nei prossimi 3 esami per non scendere sotto il 28?"
+* **App Interface (Glide):**
+    * Visualizzazione pulita della Dashboard (Media, CFU).
+    * Lista esami con edit rapido (inserimento voto).
+* **Smart Notifications (Apps Script):**
+    * **Cron Job:** Script che gira ogni mattina (es. 08:00).
+    * **Logica:** `IF (Giorni_Mancanti == 3) THEN Send_Telegram_Msg`.
+    * **Bot Telegram:** Invia messaggi tipo *"⚠️ Attenzione! Mancano 3 giorni ad Analisi 1. Dacci dentro!"*.
 
 ---
 
-## 🔌 User Experience (UX)
-* **Integrazione:** Il Foglio Google viene incorporato (Embed) direttamente dentro Notion.
-* **Flusso:** L'utente usa Notion per l'organizzazione quotidiana e tocca il foglio Sheets solo per aggiornare i voti o fare simulazioni strategiche.
+## 🚀 Roadmap di Sviluppo
+*Spunta le caselle man mano che avanzi per tenere traccia dei progressi.*
+
+### FASE 1: Architettura Dati (Google Sheets) 🗃️
+- [ ] Creazione file `Backend_StudentOS` su Google Sheets.
+- [ ] Setup Tab `DB_Esami` con colonne (Materia, CFU, Voto, Data, Stato).
+- [ ] Setup Tab `DB_Config` (Dati utente, Token Bot Telegram).
+- [ ] Implementazione formula **Media Ponderata** (con `MATR.SOMMA.PRODOTTO`).
+- [ ] Implementazione formula **Conteggio CFU** (Acquisiti vs Totali).
+
+### FASE 2: Interfaccia App (Glide) 📱
+- [ ] Creazione account Glide e collegamento al Foglio Google.
+- [ ] Design **Dashboard Home**: Componenti "Big Number" per Media e CFU.
+- [ ] Design **Lista Esami**: Filtro per vedere solo esami "Da dare".
+- [ ] Setup **Edit Mode**: Permettere all'utente di scrivere il voto dall'app.
+
+### FASE 3: Logica & Bot (Google Apps Script) 🤖
+- [ ] Creazione Bot Telegram con `@BotFather` (Salvataggio Token).
+- [ ] Scrittura script `telegramBot.gs` (Funzione per inviare messaggi).
+- [ ] Scrittura script `checkDeadlines.gs` (Loop che controlla le date).
+- [ ] Impostazione del **Trigger** orario (es. ogni giorno alle 08:00).
+- [ ] Test di invio notifica automatica.
+
+### FASE 4: Integrazione Notion & Packaging 📦
+- [ ] Creazione Template Notion (Pagina Home, Database, Viste).
+- [ ] Embed del Grafico andamento media da Sheets a Notion.
+- [ ] Scrittura manuale PDF/Notion "Come installare Student OS".
+- [ ] Pulizia dati personali e preparazione link per la vendita/distribuzione.
+
+---
+
+## 📝 Note di Sviluppo (Log)
+*Usa questo spazio per segnarti problemi o idee al volo.*
+* *Idea:* Aggiungere calcolo previsionale per voto di laurea?
+* *Todo:* Verificare se Glide permette le notifiche push native nel piano free (altrimenti restiamo su Telegram).
