@@ -71,7 +71,7 @@ La parte logica, nascosta o "embedded" nella pagina Notion.
 
 ### 1. Funzioni "Core" (L'Analisi Attuale)
 * **Calcolatore Media Ponderata:**
-    * Logica: `(Somma(Voto * CFU)) / (Somma CFU Totali)`
+    * Logica: `(Somma(Voto * CFU)) / (Somma CFU Totali)` -> mettendo anche il grafico della media
     * Aggiornamento automatico all'inserimento dei dati.
 * **Tracker CFU:**
     * Visualizzazione grafica (Barra di progresso o Percentuale) per indicare quanto manca alla laurea.
