@@ -26,4 +26,65 @@ Gestisce l'organizzazione visiva e il flusso di lavoro.
 
 ### 2. Il "Motore" (Google Sheets) 🏎️
 Gestisce i calcoli complessi e le previsioni (Embedded in Notion).
-* **Funzioni:** Media ponderata automatica, tracking CFU, simulatore voto.
+* **Funzioni:** Media ponderata automatica, tracking CFU, simulatore voto.*
+---
+
+## 🏗️ Student OS: Specifiche Tecniche del Progetto
+**Versione:** 1.0 - The "Engineering Approach"
+
+### 🎯 Visione del Progetto
+Creare il "Sistema Operativo Definitivo" per lo studente universitario. Un prodotto digitale che elimina il caos organizzativo unendo l'estetica di Notion alla potenza di calcolo di Google Sheets.
+* **Filosofia:** "Non insegniamo la materia, forniamo la macchina per gestirla." (Approccio No-Teacher)
+* **Target:** Studenti universitari che necessitano di monitorare Media Ponderata e CFU.
+
+---
+
+### 🧠 Il Cervello: Architettura Notion (Frontend)
+La parte visiva dove l'utente passa il 90% del tempo.
+
+### 1. Il Database Master ("Centro di Controllo")
+Un unico archivio centrale contenente tutte le scadenze e gli esami.
+* **Proprietà (Colonne) Essenziali:**
+    * 🏷️ **Nome Attività:** (es. "Analisi 1", "Consegna Progetto")
+    * 📅 **Data:** (Data esame o scadenza)
+    * 📂 **Tipo:** (Select: Scritto, Orale, Progetto, Parziale)
+    * 🚦 **Priorità:** (Select: Alta, Media, Bassa) - *Per ordinare le task nei momenti di crisi.*
+    * ⚖️ **Peso/CFU:** (Number) - *Cruciale per il collegamento con il motore di calcolo.*
+    * ✅ **Stato:** (Status: Da fare, In corso, Ripasso, Fatto) - *Fondamentale per la vista Board.*
+
+### 2. Le Viste Strategiche (Dashboard)
+Come i dati vengono presentati all'utente nella Home Page:
+* **Vista 1: Timeline Mensile (Calendario)**
+    * *Obiettivo:* Visione d'insieme per non perdere le scadenze.
+* **Vista 2: Focus Flow (Kanban Board)**
+    * *Obiettivo:* Gestione operativa. L'utente trascina le card da "Da fare" a "Fatto".
+    * *Transizione:* Switch fluido tra le due viste tramite tab.
+
+### 3. Moduli Aggiuntivi Integrati
+* **Diario di Bordo:** To-Do list giornaliera collegata al database principale.
+* **Gestore Corsi:** Spazio minimale per link e info logistiche (senza eccessivi dettagli manuali).
+
+---
+
+## 🏎️ Il Motore: Architettura Google Sheets (Backend)
+La parte logica, nascosta o "embedded" nella pagina Notion.
+
+### 1. Funzioni "Core" (L'Analisi Attuale)
+* **Calcolatore Media Ponderata:**
+    * Logica: `(Somma(Voto * CFU)) / (Somma CFU Totali)`
+    * Aggiornamento automatico all'inserimento dei dati.
+* **Tracker CFU:**
+    * Visualizzazione grafica (Barra di progresso o Percentuale) per indicare quanto manca alla laurea.
+
+### 2. Funzioni "Premium" (La Strategia Futura)
+* **Il Simulatore "What If":**
+    * Input utente: Voto ipotetico nel prossimo esame.
+    * Output immediato: Come cambierebbe la media e il voto di partenza alla laurea.
+* **Il Previsore (Target):**
+    * Calcolo inverso: "Che media devo tenere nei prossimi 3 esami per non scendere sotto il 28?"
+
+---
+
+## 🔌 User Experience (UX)
+* **Integrazione:** Il Foglio Google viene incorporato (Embed) direttamente dentro Notion.
+* **Flusso:** L'utente usa Notion per l'organizzazione quotidiana e tocca il foglio Sheets solo per aggiornare i voti o fare simulazioni strategiche.
