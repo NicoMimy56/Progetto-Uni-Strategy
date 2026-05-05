@@ -64,6 +64,7 @@
     "cfuRemaining": "CFU mancanti",
     "cfuPlanned": "CFU totali pianificati",
     "examsTitle": "Esami",
+    "studyWeekTitle": "Piano studio della settimana",
     "trendTitle": "Andamento media",
     "targetAvgLabel": "Obiettivo media"
   },
@@ -96,6 +97,8 @@
     "weekDay": "Giorno settimana",
     "subjectLabel": "Esame / materia",
     "subjectPh": "Esame / materia",
+    "descriptionLabel": "Descrizione",
+    "descriptionPh": "Cosa vuoi fare in questa sessione",
     "startPh": "Ora inizio",
     "endPh": "Ora fine",
     "addBtn": "Aggiungi sessione",

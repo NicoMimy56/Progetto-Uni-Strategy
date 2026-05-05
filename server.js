@@ -24,6 +24,7 @@ db.exec(`
     id TEXT PRIMARY KEY,
     day TEXT NOT NULL,
     subject TEXT NOT NULL,
+    description TEXT,
     start_time TEXT NOT NULL,
     end_time TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -34,6 +35,11 @@ db.exec(`
     value TEXT NOT NULL
   );
 `);
+const studyColumns = db.prepare("PRAGMA table_info(study_sessions)").all();
+const hasDescriptionColumn = studyColumns.some((column) => column.name === "description");
+if (!hasDescriptionColumn) {
+  db.exec("ALTER TABLE study_sessions ADD COLUMN description TEXT");
+}
 
 app.use(express.json());
 app.use(
@@ -58,6 +64,7 @@ function toStudyRow(row) {
     id: row.id,
     day: row.day,
     subject: row.subject,
+    description: row.description || "",
     start: row.start_time,
     end: row.end_time
   };
@@ -124,7 +131,7 @@ app.delete("/api/exams", (_req, res) => {
 });
 
 app.post("/api/study-sessions", (req, res) => {
-  const { id, day, subject, start, end } = req.body;
+  const { id, day, subject, description, start, end } = req.body;
   if (!id || !day || !subject || !start || !end) {
     return res.status(400).json({ error: "Missing study session fields." });
   }
@@ -133,9 +140,9 @@ app.post("/api/study-sessions", (req, res) => {
   }
 
   db.prepare(
-    `INSERT INTO study_sessions (id, day, subject, start_time, end_time)
-     VALUES (?, ?, ?, ?, ?)`
-  ).run(id, day, subject.trim(), start, end);
+    `INSERT INTO study_sessions (id, day, subject, description, start_time, end_time)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).run(id, day, subject.trim(), (description || "").trim(), start, end);
 
   const inserted = db.prepare("SELECT * FROM study_sessions WHERE id = ?").get(id);
   return res.status(201).json(toStudyRow(inserted));

@@ -119,6 +119,7 @@ label {
 }
 
 input,
+textarea,
 select,
 button {
   border-radius: 10px;
@@ -130,6 +131,15 @@ button {
 
 input::placeholder {
   color: #9aa8bc;
+}
+
+textarea::placeholder {
+  color: #9aa8bc;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 62px;
 }
 
 button {
@@ -352,6 +362,16 @@ button {
   border-radius: 8px;
   background: #eaf1ff;
   font-size: 0.78rem;
+}
+
+.study-item-time {
+  margin: 0.2rem 0 0;
+}
+
+.study-item-description {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.74rem;
 }
 
 .study-item button {
@@ -664,6 +684,7 @@ html.theme-dark .tab-btn.active {
 }
 
 html.theme-dark input,
+html.theme-dark textarea,
 html.theme-dark select {
   background: #27272a;
   border-color: #3f3f46;

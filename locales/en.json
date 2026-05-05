@@ -64,6 +64,7 @@
     "cfuRemaining": "Credits remaining",
     "cfuPlanned": "Total planned credits",
     "examsTitle": "Exams",
+    "studyWeekTitle": "Weekly study plan",
     "trendTitle": "GPA trend",
     "targetAvgLabel": "Target average"
   },
@@ -96,6 +97,8 @@
     "weekDay": "Weekday",
     "subjectLabel": "Subject",
     "subjectPh": "Subject",
+    "descriptionLabel": "Description",
+    "descriptionPh": "What you plan to do in this session",
     "startPh": "Start time",
     "endPh": "End time",
     "addBtn": "Add session",

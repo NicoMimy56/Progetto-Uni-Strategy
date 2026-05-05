@@ -1,6 +1,6 @@
 const WEEK_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const CALENDAR_WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const APP_I18N_VERSION = "2026-05-05-3";
+const APP_I18N_VERSION = "2026-05-05-4";
 
 const examForm = document.getElementById("exam-form");
 const simulatorForm = document.getElementById("simulator-form");
@@ -17,6 +17,7 @@ const clearBtn = document.getElementById("clear-btn");
 const trendChartEl = document.getElementById("trend-chart");
 const targetAverageHomeEl = document.getElementById("target-average-home");
 const targetAverageTipEl = document.getElementById("target-average-tip");
+const graduationAverageTipEl = document.getElementById("graduation-average-tip");
 const trendHelperMessageEl = document.getElementById("trend-helper-message");
 const prevMonthBtn = document.getElementById("prev-month");
 const nextMonthBtn = document.getElementById("next-month");
@@ -24,6 +25,7 @@ const calendarTitleEl = document.getElementById("calendar-title");
 const calendarGridEl = document.getElementById("calendar-grid");
 const studyForm = document.getElementById("study-form");
 const studyBoardEl = document.getElementById("study-board");
+const homeStudyBoardEl = document.getElementById("home-study-board");
 const clearStudyBtn = document.getElementById("clear-study-btn");
 const tabButtons = document.querySelectorAll(".tab-btn");
 const tabContents = document.querySelectorAll(".tab-content");
@@ -534,7 +536,7 @@ function weightedGpa(exams) {
   return credits > 0 ? weighted / credits : 0;
 }
 
-function drawTrendChart(exams, targetGpa) {
+function drawTrendChart(exams, targetGpa, graduationTarget) {
   const ctx = trendChartEl.getContext("2d");
   const cssWidth = Math.max(280, trendChartEl.clientWidth || 300);
   const cssHeight = 260;
@@ -614,6 +616,22 @@ function drawTrendChart(exams, targetGpa) {
     ctx.fillStyle = "#ef4444";
     ctx.font = "11px sans-serif";
     ctx.fillText(`Target ${targetGpa.toFixed(2)}`, chart.right - 86, targetY - 6);
+  }
+
+  // Graduation target line converted from /110 to /30.
+  const graduationTargetAvg = (graduationTarget * 30) / 110;
+  if (graduationTargetAvg >= 18 && graduationTargetAvg <= 31) {
+    const gradY = yAt(graduationTargetAvg);
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = "#f59e0b";
+    ctx.beginPath();
+    ctx.moveTo(chart.left, gradY);
+    ctx.lineTo(chart.right, gradY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#b45309";
+    ctx.font = "11px sans-serif";
+    ctx.fillText(`Media for ${graduationTarget.toFixed(1)}/110`, chart.right - 136, gradY - 6);
   }
 
   const lineValues = runningAvg.length === 1 ? [runningAvg[0], runningAvg[0]] : runningAvg;
@@ -761,8 +779,17 @@ function renderCalendar(exams) {
 }
 
 function renderStudyPlan() {
+  renderStudyBoard(studyBoardEl, true);
+}
+
+function renderHomeStudyPlan() {
+  renderStudyBoard(homeStudyBoardEl, false);
+}
+
+function renderStudyBoard(containerEl, showDeleteButton) {
+  if (!containerEl) return;
   const plan = getStudyPlan();
-  studyBoardEl.innerHTML = "";
+  containerEl.innerHTML = "";
 
   WEEK_DAYS.forEach((day) => {
     const column = document.createElement("div");
@@ -784,16 +811,23 @@ function renderStudyPlan() {
       sessions.forEach((session) => {
         const item = document.createElement("div");
         item.className = "study-item";
+        const descriptionHtml = session.description
+          ? `<p class="study-item-description">${session.description}</p>`
+          : "";
+        const deleteBtnHtml = showDeleteButton
+          ? `<button class="danger" data-session-id="${session.id}" type="button">${t("study.deleteBtn")}</button>`
+          : "";
         item.innerHTML = `
-          <strong>${session.subject}</strong><br />
-          ${session.start} - ${session.end}
-          <button class="danger" data-session-id="${session.id}" type="button">${t("study.deleteBtn")}</button>
+          <strong>${session.subject}</strong>
+          <p class="study-item-time">${session.start} - ${session.end}</p>
+          ${descriptionHtml}
+          ${deleteBtnHtml}
         `;
         column.appendChild(item);
       });
     }
 
-    studyBoardEl.appendChild(column);
+    containerEl.appendChild(column);
   });
 }
 
@@ -899,27 +933,21 @@ function render() {
   creditsPercentageEl.textContent = `${percentage.toFixed(0)}%`;
   creditsChartEl.style.background = `conic-gradient(#22c55e ${degree}deg, var(--muted) ${degree}deg 360deg)`;
   targetAverageHomeEl.value = targetGpa > 0 ? targetGpa.toFixed(2) : "";
-  const parts = [];
   if (targetGpa > 0) {
     const neededForFuture = (targetGpa * total - gpa * acquired) / Math.max(1, remaining);
-    parts.push(
-      t("targetTip", {
-        target: targetGpa.toFixed(2),
-        needed: neededForFuture.toFixed(2)
-      })
-    );
+    targetAverageTipEl.textContent = t("targetTip", {
+      target: targetGpa.toFixed(2),
+      needed: neededForFuture.toFixed(2)
+    });
   } else {
-    parts.push(t("targetPrompt"));
+    targetAverageTipEl.textContent = t("targetPrompt");
   }
 
   const graduationAvgTarget = (state.profile.graduationTarget * 30) / 110;
-  parts.push(
-    t("graduationTip", {
-      target: state.profile.graduationTarget.toFixed(1),
-      avg: graduationAvgTarget.toFixed(2)
-    })
-  );
-  targetAverageTipEl.textContent = parts.join(" ");
+  graduationAverageTipEl.textContent = t("graduationTip", {
+    target: state.profile.graduationTarget.toFixed(1),
+    avg: graduationAvgTarget.toFixed(2)
+  });
 
   const completedWithGrade = exams.filter(
     (e) => e.status === "Completed" && Number.isFinite(e.grade)
@@ -929,9 +957,10 @@ function render() {
   } else {
     trendHelperMessageEl.textContent = t("trendInfo");
   }
-  drawTrendChart(exams, targetGpa);
+  drawTrendChart(exams, targetGpa, state.profile.graduationTarget);
   renderCalendar(exams);
   renderStudyPlan();
+  renderHomeStudyPlan();
 }
 
 examForm.addEventListener("submit", async (event) => {
@@ -1018,6 +1047,7 @@ studyForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const day = document.getElementById("study-day").value;
   const subject = document.getElementById("study-subject").value.trim();
+  const description = document.getElementById("study-description").value.trim();
   const start = document.getElementById("study-start").value;
   const end = document.getElementById("study-end").value;
   if (!subject || !start || !end || start >= end) return;
@@ -1026,6 +1056,7 @@ studyForm.addEventListener("submit", async (event) => {
     id: crypto.randomUUID(),
     day,
     subject,
+    description,
     start,
     end
   };
@@ -1036,7 +1067,7 @@ studyForm.addEventListener("submit", async (event) => {
     });
     saveStudyPlan([...getStudyPlan(), created]);
     studyForm.reset();
-    renderStudyPlan();
+    render();
   } catch (error) {
     alert(error.message);
   }
@@ -1050,7 +1081,7 @@ studyBoardEl.addEventListener("click", async (event) => {
     await apiRequest(`/api/study-sessions/${id}`, { method: "DELETE" });
     const updated = getStudyPlan().filter((item) => item.id !== id);
     saveStudyPlan(updated);
-    renderStudyPlan();
+    render();
   } catch (error) {
     alert(error.message);
   }
@@ -1060,7 +1091,7 @@ clearStudyBtn.addEventListener("click", async () => {
   try {
     await apiRequest("/api/study-sessions", { method: "DELETE" });
     saveStudyPlan([]);
-    renderStudyPlan();
+    render();
   } catch (error) {
     alert(error.message);
   }
@@ -1191,7 +1222,8 @@ async function initializeApp() {
     }));
     state.studyPlan = (data.studyPlan || []).map((session) => ({
       ...session,
-      day: normalizeStudyDay(session.day)
+      day: normalizeStudyDay(session.day),
+      description: session.description || ""
     }));
     state.targetGpa = Number.isFinite(data.targetGpa) ? data.targetGpa : 0;
     state.profile = data.profile ? { ...DEFAULT_PROFILE, ...data.profile } : { ...DEFAULT_PROFILE };
@@ -1213,5 +1245,5 @@ async function initializeApp() {
 initializeApp();
 window.addEventListener("resize", () => {
   setDeviceMode();
-  drawTrendChart(getExams(), getTargetGpa());
+  drawTrendChart(getExams(), getTargetGpa(), state.profile.graduationTarget);
 });

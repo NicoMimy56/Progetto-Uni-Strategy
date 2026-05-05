@@ -61,6 +61,27 @@
 
           <section class="card full-width">
             <div class="table-head">
+              <h2 data-i18n="home.studyWeekTitle">Piano studio della settimana</h2>
+            </div>
+            <div id="home-study-board" class="study-board"></div>
+          </section>
+
+          <section class="card full-width">
+            <div class="table-head">
+              <h2 data-i18n="home.trendTitle">Andamento media</h2>
+              <label class="inline-input">
+                <span data-i18n="home.targetAvgLabel">Obiettivo media</span>
+                <input type="number" id="target-average-home" min="18" max="31" step="0.01" />
+              </label>
+            </div>
+            <p id="target-average-tip" class="simulator-result"></p>
+            <p id="graduation-average-tip" class="trend-helper-message"></p>
+            <p id="trend-helper-message" class="trend-helper-message"></p>
+            <canvas id="trend-chart" height="220"></canvas>
+          </section>
+
+          <section class="card full-width">
+            <div class="table-head">
               <h2 data-i18n="home.examsTitle">Esami</h2>
               <div class="list-filters">
                 <button id="home-show-pending" class="small-filter-btn active" type="button">Da sostenere</button>
@@ -79,19 +100,6 @@
               </thead>
               <tbody id="upcoming-table-body"></tbody>
             </table>
-          </section>
-
-          <section class="card full-width">
-            <div class="table-head">
-              <h2 data-i18n="home.trendTitle">Andamento media</h2>
-              <label class="inline-input">
-                <span data-i18n="home.targetAvgLabel">Obiettivo media</span>
-                <input type="number" id="target-average-home" min="18" max="31" step="0.01" />
-              </label>
-            </div>
-            <p id="target-average-tip" class="simulator-result"></p>
-            <p id="trend-helper-message" class="trend-helper-message"></p>
-            <canvas id="trend-chart" height="220"></canvas>
           </section>
         </div>
       </section>
@@ -204,6 +212,10 @@
               <label>
                 <span data-i18n="study.subjectLabel">Esame / materia</span>
                 <input type="text" id="study-subject" data-i18n-placeholder="study.subjectPh" placeholder="" required />
+              </label>
+              <label>
+                <span data-i18n="study.descriptionLabel">Descrizione</span>
+                <textarea id="study-description" rows="2" data-i18n-placeholder="study.descriptionPh" placeholder=""></textarea>
               </label>
               <label>
                 <span data-i18n="study.startPh">Inizio</span>
@@ -323,6 +335,6 @@
     <script src="/vendor/i18next/i18next.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
-    <script src="./app.js?v=2026-05-05-3"></script>
+    <script src="./app.js?v=2026-05-05-4"></script>
   </body>
 </html>
