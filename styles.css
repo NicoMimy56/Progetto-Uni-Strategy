@@ -715,3 +715,128 @@ html.theme-dark body.device-desktop .tab-btn {
   background: #27272a;
   color: #e4e4e7;
 }
+
+.study-time-popover {
+  position: absolute;
+  z-index: 1200;
+  width: 280px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card-bg);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.2);
+  padding: 0.75rem;
+}
+
+.study-time-clock-wrap {
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.65rem;
+}
+
+.study-time-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.study-time-clock {
+  width: 124px;
+  height: 124px;
+  border-radius: 999px;
+  border: 2px solid var(--border);
+  background: linear-gradient(160deg, rgba(59, 130, 246, 0.07), rgba(148, 163, 184, 0.04));
+  position: relative;
+}
+
+.study-time-tick {
+  position: absolute;
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.study-time-tick.t12 {
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.study-time-tick.t3 {
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.study-time-tick.t6 {
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.study-time-tick.t9 {
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.study-time-hand {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  transform-origin: bottom center;
+  transform: translateX(-50%) rotate(0deg);
+  border-radius: 999px;
+}
+
+.study-time-hand.hour {
+  width: 4px;
+  height: 34px;
+  background: var(--primary-dark);
+}
+
+.study-time-hand.minute {
+  width: 3px;
+  height: 48px;
+  background: var(--primary);
+}
+
+.study-time-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--primary);
+  transform: translate(-50%, -50%);
+}
+
+.study-time-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+}
+
+.study-time-controls label {
+  gap: 0.2rem;
+  font-size: 0.76rem;
+}
+
+.study-time-controls select {
+  padding: 0.5rem 0.55rem;
+}
+
+.study-time-apply {
+  grid-column: 1 / -1;
+  padding: 0.52rem;
+  border-radius: 10px;
+}
+
+html.theme-dark .study-time-popover {
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.45);
+}
+
+html.theme-dark .study-time-clock {
+  background: linear-gradient(160deg, rgba(165, 180, 252, 0.2), rgba(63, 63, 70, 0.2));
+}

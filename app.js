@@ -92,6 +92,15 @@ const state = {
   profile: { ...DEFAULT_PROFILE },
   homeExamFilter: "pending"
 };
+const studyTimePickerState = {
+  panel: null,
+  activeInput: null,
+  hourSelect: null,
+  minuteSelect: null,
+  hourHand: null,
+  minuteHand: null,
+  valueLabel: null
+};
 
 function applyTheme(theme) {
   const root = document.documentElement;
@@ -263,9 +272,167 @@ function setDegreeFromTile(path) {
 }
 
 function destroyDatePickers() {
-  [examDateInput, studyStartInput, studyEndInput].forEach((el) => {
+  [examDateInput].forEach((el) => {
     if (el._flatpickr) el._flatpickr.destroy();
   });
+}
+
+function formatTimeValue(hour, minute) {
+  const safeHour = String(Math.max(0, Math.min(23, Number(hour) || 0))).padStart(2, "0");
+  const safeMinute = String(Math.max(0, Math.min(59, Number(minute) || 0))).padStart(2, "0");
+  return `${safeHour}:${safeMinute}`;
+}
+
+function parseTimeValue(raw) {
+  if (typeof raw !== "string") return { hour: 9, minute: 0 };
+  const match = raw.trim().match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
+  if (!match) return { hour: 9, minute: 0 };
+  return { hour: Number(match[1]), minute: Number(match[2]) };
+}
+
+function updateStudyClockPreview(hour, minute) {
+  const { hourHand, minuteHand, valueLabel } = studyTimePickerState;
+  if (!hourHand || !minuteHand || !valueLabel) return;
+  const hourAngle = ((hour % 12) + minute / 60) * 30;
+  const minuteAngle = minute * 6;
+  hourHand.style.transform = `translateX(-50%) rotate(${hourAngle}deg)`;
+  minuteHand.style.transform = `translateX(-50%) rotate(${minuteAngle}deg)`;
+  valueLabel.textContent = formatTimeValue(hour, minute);
+}
+
+function applyStudyPickerSelection() {
+  const { activeInput, hourSelect, minuteSelect } = studyTimePickerState;
+  if (!activeInput || !hourSelect || !minuteSelect) return;
+  activeInput.value = formatTimeValue(hourSelect.value, minuteSelect.value);
+  activeInput.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function hideStudyTimePicker() {
+  const { panel } = studyTimePickerState;
+  if (!panel) return;
+  panel.hidden = true;
+  studyTimePickerState.activeInput = null;
+}
+
+function placeStudyTimePicker(targetInput) {
+  const { panel } = studyTimePickerState;
+  if (!panel) return;
+  const rect = targetInput.getBoundingClientRect();
+  panel.style.top = `${window.scrollY + rect.bottom + 8}px`;
+  panel.style.left = `${Math.max(12, window.scrollX + rect.left)}px`;
+}
+
+function showStudyTimePicker(targetInput) {
+  if (!studyTimePickerState.panel) return;
+  const parsed = parseTimeValue(targetInput.value);
+  studyTimePickerState.activeInput = targetInput;
+  studyTimePickerState.hourSelect.value = String(parsed.hour).padStart(2, "0");
+  studyTimePickerState.minuteSelect.value = String(Math.round(parsed.minute / 5) * 5 % 60).padStart(2, "0");
+  updateStudyClockPreview(parsed.hour, Number(studyTimePickerState.minuteSelect.value));
+  placeStudyTimePicker(targetInput);
+  studyTimePickerState.panel.hidden = false;
+}
+
+function setupStudyTimePicker() {
+  if (studyTimePickerState.panel) return;
+  const panel = document.createElement("div");
+  panel.className = "study-time-popover";
+  panel.hidden = true;
+  panel.innerHTML = `
+    <div class="study-time-clock-wrap">
+      <div class="study-time-value">09:00</div>
+      <div class="study-time-clock">
+        <span class="study-time-tick t12">12</span>
+        <span class="study-time-tick t3">3</span>
+        <span class="study-time-tick t6">6</span>
+        <span class="study-time-tick t9">9</span>
+        <span class="study-time-hand hour"></span>
+        <span class="study-time-hand minute"></span>
+        <span class="study-time-center"></span>
+      </div>
+    </div>
+    <div class="study-time-controls">
+      <label>Ora
+        <select class="study-time-hour"></select>
+      </label>
+      <label>Min
+        <select class="study-time-minute"></select>
+      </label>
+      <button type="button" class="study-time-apply">Applica</button>
+    </div>
+  `;
+  document.body.appendChild(panel);
+
+  const hourSelect = panel.querySelector(".study-time-hour");
+  const minuteSelect = panel.querySelector(".study-time-minute");
+  for (let h = 0; h < 24; h += 1) {
+    const opt = document.createElement("option");
+    opt.value = String(h).padStart(2, "0");
+    opt.textContent = String(h).padStart(2, "0");
+    hourSelect.appendChild(opt);
+  }
+  for (let m = 0; m < 60; m += 5) {
+    const opt = document.createElement("option");
+    opt.value = String(m).padStart(2, "0");
+    opt.textContent = String(m).padStart(2, "0");
+    minuteSelect.appendChild(opt);
+  }
+
+  const handlePreviewUpdate = () => {
+    const hour = Number(hourSelect.value);
+    const minute = Number(minuteSelect.value);
+    updateStudyClockPreview(hour, minute);
+    applyStudyPickerSelection();
+  };
+
+  hourSelect.addEventListener("change", handlePreviewUpdate);
+  minuteSelect.addEventListener("change", handlePreviewUpdate);
+  panel.querySelector(".study-time-apply").addEventListener("click", () => {
+    applyStudyPickerSelection();
+    hideStudyTimePicker();
+  });
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (
+      target.closest(".study-time-popover") ||
+      target === studyStartInput ||
+      target === studyEndInput
+    ) {
+      return;
+    }
+    hideStudyTimePicker();
+  });
+  window.addEventListener("resize", () => {
+    if (studyTimePickerState.activeInput && !panel.hidden) {
+      placeStudyTimePicker(studyTimePickerState.activeInput);
+    }
+  });
+  window.addEventListener("scroll", () => {
+    if (studyTimePickerState.activeInput && !panel.hidden) {
+      placeStudyTimePicker(studyTimePickerState.activeInput);
+    }
+  });
+
+  [studyStartInput, studyEndInput].forEach((input) => {
+    input.addEventListener("focus", () => showStudyTimePicker(input));
+    input.addEventListener("click", () => showStudyTimePicker(input));
+    input.addEventListener("input", () => {
+      const parsed = parseTimeValue(input.value);
+      if (studyTimePickerState.activeInput === input && !panel.hidden) {
+        hourSelect.value = String(parsed.hour).padStart(2, "0");
+        minuteSelect.value = String(Math.round(parsed.minute / 5) * 5 % 60).padStart(2, "0");
+        updateStudyClockPreview(parsed.hour, Number(minuteSelect.value));
+      }
+    });
+  });
+
+  studyTimePickerState.panel = panel;
+  studyTimePickerState.hourSelect = hourSelect;
+  studyTimePickerState.minuteSelect = minuteSelect;
+  studyTimePickerState.hourHand = panel.querySelector(".study-time-hand.hour");
+  studyTimePickerState.minuteHand = panel.querySelector(".study-time-hand.minute");
+  studyTimePickerState.valueLabel = panel.querySelector(".study-time-value");
 }
 
 function syncGradeInputByStatus() {
@@ -291,17 +458,7 @@ function setupDateTimePickers() {
     ...(useIt && flatpickr.l10ns?.it ? { locale: flatpickr.l10ns.it } : {})
   });
 
-  const timeConfig = {
-    enableTime: true,
-    noCalendar: true,
-    dateFormat: "H:i",
-    time_24hr: true,
-    minuteIncrement: 5,
-    allowInput: true,
-    clickOpens: true
-  };
-  flatpickr(studyStartInput, timeConfig);
-  flatpickr(studyEndInput, timeConfig);
+  setupStudyTimePicker();
 }
 
 async function apiRequest(path, options = {}) {
