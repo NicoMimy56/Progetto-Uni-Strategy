@@ -1,0 +1,18 @@
+{
+  "name": "progettounistrategy",
+  "version": "1.0.0",
+  "description": "Starter implementation of your Student OS idea: - exam planning table - weighted GPA and credits tracking - target grade simulator (\"what grade do I need?\")",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^12.9.0",
+    "express": "^5.2.1",
+    "i18next": "^26.0.8"
+  }
+}

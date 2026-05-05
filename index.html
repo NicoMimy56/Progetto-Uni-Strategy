@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Uni-Strategy</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1>Uni-Strategy</h1>
+      <p data-i18n="brandTagline">Your academic journey, fully under control.</p>
+    </header>
+
+    <nav class="tabs">
+      <button type="button" class="tab-btn active" data-tab="home" data-i18n="tabs.home">Home</button>
+      <button type="button" class="tab-btn" data-tab="manage" data-i18n="tabs.manage">Gestione Esami</button>
+      <button type="button" class="tab-btn" data-tab="calendar" data-i18n="tabs.calendar">Calendario</button>
+      <button type="button" class="tab-btn" data-tab="study" data-i18n="tabs.study">Piano Studio</button>
+      <button type="button" class="tab-btn" data-tab="settings" data-i18n="tabs.settings">Impostazioni</button>
+    </nav>
+
+    <main>
+      <section id="home-tab" class="tab-content active">
+        <div class="layout">
+          <section class="card full-width">
+            <h2 data-i18n="home.heroTitle">La mia situazione accademica</h2>
+            <div class="hero-metric">
+              <p class="metric-label" data-i18n="home.weightedAvg">Media ponderata</p>
+              <p id="gpa" class="gpa-hero">0.00</p>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2 data-i18n="home.creditsTitle">Crediti sostenuti vs mancanti</h2>
+            <div class="credits-chart-wrap">
+              <div id="credits-chart" class="credits-chart">
+                <div class="credits-chart-inner">
+                  <span id="credits-percentage">0%</span>
+                </div>
+              </div>
+              <div class="credits-legend">
+                <p>
+                  <span class="dot done"></span>
+                  <span data-i18n="home.cfuAcquired">CFU acquisiti</span>:
+                  <strong id="acquired-credits">0</strong>
+                </p>
+                <p>
+                  <span class="dot left"></span>
+                  <span data-i18n="home.cfuRemaining">CFU mancanti</span>:
+                  <strong id="remaining-credits">0</strong>
+                </p>
+                <p><span data-i18n="home.cfuPlanned">CFU totali pianificati</span>: <strong id="total-credits">0</strong></p>
+              </div>
+            </div>
+          </section>
+
+          <section class="card full-width">
+            <div class="table-head">
+              <h2 data-i18n="home.examsTitle">Esami</h2>
+              <div class="list-filters">
+                <button id="home-show-pending" class="small-filter-btn active" type="button">Da sostenere</button>
+                <button id="home-show-completed" class="small-filter-btn" type="button">Completati</button>
+              </div>
+            </div>
+            <table>
+              <thead>
+                <tr id="home-exams-head-row">
+                  <th data-i18n="tableSubject">Materia</th>
+                  <th data-i18n="tableCfu">CFU</th>
+                  <th data-i18n="tableDate">Data</th>
+                  <th data-i18n="tableStatus">Stato</th>
+                  <th data-i18n="tableDays">Giorni</th>
+                </tr>
+              </thead>
+              <tbody id="upcoming-table-body"></tbody>
+            </table>
+          </section>
+
+          <section class="card full-width">
+            <div class="table-head">
+              <h2 data-i18n="home.trendTitle">Andamento media</h2>
+              <label class="inline-input">
+                <span data-i18n="home.targetAvgLabel">Obiettivo media</span>
+                <input type="number" id="target-average-home" min="18" max="31" step="0.01" />
+              </label>
+            </div>
+            <p id="target-average-tip" class="simulator-result"></p>
+            <p id="trend-helper-message" class="trend-helper-message"></p>
+            <canvas id="trend-chart" height="220"></canvas>
+          </section>
+        </div>
+      </section>
+
+      <section id="manage-tab" class="tab-content">
+        <div class="layout">
+          <section class="card">
+            <h2 data-i18n="manage.addExam">Aggiungi esame</h2>
+            <form id="exam-form" class="form-grid">
+              <label>
+                <span data-i18n="manage.subject">Materia</span>
+                <input type="text" id="subject" required />
+              </label>
+              <label>
+                <span data-i18n="manage.credits">Crediti (CFU)</span>
+                <input type="number" id="credits" min="1" required />
+              </label>
+              <label>
+                <span data-i18n="manage.grade">Voto (18-31)</span>
+                <input type="number" id="grade" min="18" max="31" />
+              </label>
+              <label>
+                <span data-i18n="manage.examDate">Data esame</span>
+                <input type="text" id="exam-date" data-i18n-placeholder="manage.examDatePh" placeholder="Seleziona data esame" />
+              </label>
+              <label>
+                <span data-i18n="manage.status">Stato</span>
+                <select id="status">
+                  <option value="To Take">To Take</option>
+                  <option value="In Preparation">In Preparation</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              </label>
+              <button type="submit" data-i18n="manage.saveExam">Salva esame</button>
+            </form>
+          </section>
+
+          <section class="card">
+            <h2 data-i18n="manage.simulator">Simulatore</h2>
+            <form id="simulator-form" class="form-grid">
+              <label>
+                <span data-i18n="manage.targetGpa">Media obiettivo</span>
+                <input type="number" id="target-gpa" min="18" max="31" step="0.01" required />
+              </label>
+              <label>
+                <span data-i18n="manage.nextCfu">CFU prossimo esame</span>
+                <input type="number" id="next-credits" min="1" required />
+              </label>
+              <button type="submit" data-i18n="manage.calcBtn">Calcola</button>
+            </form>
+            <p id="simulator-result" class="simulator-result"></p>
+          </section>
+
+          <section class="card full-width">
+            <div class="table-head">
+              <h2 data-i18n="manage.allExams">Tutti gli esami</h2>
+              <button id="clear-btn" class="danger" type="button" data-i18n="manage.clearAll">Svuota tutto</button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th data-i18n="tableSubject">Materia</th>
+                  <th data-i18n="tableCfu">CFU</th>
+                  <th data-i18n="tableGrade">Voto</th>
+                  <th data-i18n="tableDate">Data</th>
+                  <th data-i18n="tableStatus">Stato</th>
+                  <th data-i18n="tableDays">Giorni</th>
+                  <th data-i18n="tableAction">Azione</th>
+                </tr>
+              </thead>
+              <tbody id="exam-table-body"></tbody>
+            </table>
+          </section>
+        </div>
+      </section>
+
+      <section id="calendar-tab" class="tab-content">
+        <div class="layout">
+          <section class="card full-width">
+            <div class="table-head">
+              <h2 data-i18n="calendar.title">Calendario esami</h2>
+              <div class="calendar-nav">
+                <button id="prev-month" type="button" data-i18n="calendar.prev">Mese prec.</button>
+                <p id="calendar-title"></p>
+                <button id="next-month" type="button" data-i18n="calendar.next">Mese succ.</button>
+              </div>
+            </div>
+            <div id="calendar-grid" class="calendar-grid"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="study-tab" class="tab-content">
+        <div class="layout">
+          <section class="card">
+            <h2 data-i18n="study.newSession">Nuova sessione studio</h2>
+            <form id="study-form" class="form-grid">
+              <label>
+                <span data-i18n="study.weekDay">Giorno</span>
+                <select id="study-day" required>
+                  <option value="Monday">Monday</option>
+                  <option value="Tuesday">Tuesday</option>
+                  <option value="Wednesday">Wednesday</option>
+                  <option value="Thursday">Thursday</option>
+                  <option value="Friday">Friday</option>
+                  <option value="Saturday">Saturday</option>
+                  <option value="Sunday">Sunday</option>
+                </select>
+              </label>
+              <label>
+                <span data-i18n="study.subjectLabel">Esame / materia</span>
+                <input type="text" id="study-subject" data-i18n-placeholder="study.subjectPh" placeholder="" required />
+              </label>
+              <label>
+                <span data-i18n="study.startPh">Inizio</span>
+                <input type="text" id="study-start" data-i18n-placeholder="study.startPh" placeholder="Ora inizio" required />
+              </label>
+              <label>
+                <span data-i18n="study.endPh">Fine</span>
+                <input type="text" id="study-end" data-i18n-placeholder="study.endPh" placeholder="Ora fine" required />
+              </label>
+              <button type="submit" data-i18n="study.addBtn">Aggiungi</button>
+            </form>
+          </section>
+
+          <section class="card full-width">
+            <div class="table-head">
+              <h2 data-i18n="study.weekTitle">Settimana di studio</h2>
+              <button id="clear-study-btn" class="danger" type="button" data-i18n="study.clearPlan">Svuota piano</button>
+            </div>
+            <div id="study-board" class="study-board"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="settings-tab" class="tab-content">
+        <div class="layout settings-layout">
+          <section class="card full-width settings-intro-card">
+            <h2 data-i18n="settings.pageTitle">Impostazioni</h2>
+            <p class="trend-helper-message" data-i18n="settings.pageHint"></p>
+            <button id="save-settings-btn" type="button" data-i18n="settings.save">Salva impostazioni</button>
+          </section>
+
+          <section class="card settings-mini-card">
+            <h3 class="settings-card-title" data-i18n="settings.courseTitle">Percorso</h3>
+            <p class="settings-card-hint" data-i18n="settings.courseHint"></p>
+            <div class="settings-tiles" role="group">
+              <button type="button" class="settings-tile" data-settings-degree="bachelor">
+                <span class="settings-tile-main" data-i18n="settings.degreeBachelor">Triennale</span>
+                <span class="settings-tile-sub" data-i18n="settings.degreeBachelorCfu">180 CFU</span>
+              </button>
+              <button type="button" class="settings-tile" data-settings-degree="master">
+                <span class="settings-tile-main" data-i18n="settings.degreeMaster">Magistrale</span>
+                <span class="settings-tile-sub" data-i18n="settings.degreeMasterCfu">120 CFU</span>
+              </button>
+              <button type="button" class="settings-tile" data-settings-degree="postgraduate">
+                <span class="settings-tile-main" data-i18n="settings.degreePostgrad">Master</span>
+                <span class="settings-tile-sub" data-i18n="settings.degreePostgradCfu">60 CFU</span>
+              </button>
+              <button type="button" class="settings-tile" data-settings-degree="custom">
+                <span class="settings-tile-main" data-i18n="settings.degreeCustom">Personalizzato</span>
+              </button>
+            </div>
+            <label class="settings-field">
+              <span data-i18n="settings.cfuLabel">CFU totali</span>
+              <input type="number" id="total-cfu-input" min="1" />
+            </label>
+            <p class="settings-field-hint" data-i18n="settings.cfuHint"></p>
+          </section>
+
+          <section class="card settings-mini-card">
+            <h3 class="settings-card-title" data-i18n="settings.gradTitle">Voto laurea</h3>
+            <p class="settings-card-hint" data-i18n="settings.gradHint"></p>
+            <label class="settings-field">
+              <span>/110</span>
+              <input type="number" id="graduation-target-input" min="66" max="110" step="0.5" />
+            </label>
+            <p class="settings-sub-label" data-i18n="settings.gradQuick"></p>
+            <div class="settings-tiles settings-tiles-sm" role="group">
+              <button type="button" class="settings-tile settings-tile-sm" data-grad-preset="90">90</button>
+              <button type="button" class="settings-tile settings-tile-sm" data-grad-preset="95">95</button>
+              <button type="button" class="settings-tile settings-tile-sm" data-grad-preset="100">100</button>
+              <button type="button" class="settings-tile settings-tile-sm" data-grad-preset="105">105</button>
+              <button type="button" class="settings-tile settings-tile-sm" data-grad-preset="110">110</button>
+            </div>
+          </section>
+
+          <section class="card settings-mini-card">
+            <h3 class="settings-card-title" data-i18n="settings.themeTitle">Tema</h3>
+            <p class="settings-card-hint" data-i18n="settings.themeHint"></p>
+            <div class="settings-tiles settings-tiles-theme" role="group">
+              <button type="button" class="settings-tile settings-tile-theme" data-settings-theme="classic">
+                <span class="theme-swatch swatch-classic"></span>
+                <span data-i18n="settings.themeClassic">Classic</span>
+              </button>
+              <button type="button" class="settings-tile settings-tile-theme" data-settings-theme="forest">
+                <span class="theme-swatch swatch-forest"></span>
+                <span data-i18n="settings.themeForest">Forest</span>
+              </button>
+              <button type="button" class="settings-tile settings-tile-theme" data-settings-theme="sunset">
+                <span class="theme-swatch swatch-sunset"></span>
+                <span data-i18n="settings.themeSunset">Sunset</span>
+              </button>
+              <button type="button" class="settings-tile settings-tile-theme" data-settings-theme="dark">
+                <span class="theme-swatch swatch-dark"></span>
+                <span data-i18n="settings.themeDark">Dark</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="card settings-mini-card">
+            <h3 class="settings-card-title" data-i18n="settings.langTitle">Lingua</h3>
+            <p class="settings-card-hint" data-i18n="settings.langHint"></p>
+            <div class="settings-tiles settings-tiles-lang" role="group">
+              <button type="button" class="settings-tile settings-tile-lang" data-settings-lang="it">
+                <span class="lang-flag">IT</span>
+                <span data-i18n="settings.langIt">IT</span>
+              </button>
+              <button type="button" class="settings-tile settings-tile-lang" data-settings-lang="en">
+                <span class="lang-flag">EN</span>
+                <span data-i18n="settings.langEn">EN</span>
+              </button>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script src="/vendor/i18next/i18next.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
+    <script src="./app.js?v=2026-05-05-2"></script>
+  </body>
+</html>
