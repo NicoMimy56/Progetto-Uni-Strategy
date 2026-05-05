@@ -1,6 +1,6 @@
 const WEEK_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const CALENDAR_WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const APP_I18N_VERSION = "2026-05-05-2";
+const APP_I18N_VERSION = "2026-05-05-3";
 
 const examForm = document.getElementById("exam-form");
 const simulatorForm = document.getElementById("simulator-form");
@@ -445,19 +445,18 @@ function syncGradeInputByStatus() {
 }
 
 function setupDateTimePickers() {
-  if (typeof flatpickr !== "function") return;
+  if (typeof flatpickr === "function") {
+    destroyDatePickers();
 
-  destroyDatePickers();
-
-  const useIt = state.profile.language === "it";
-  flatpickr(examDateInput, {
-    dateFormat: "Y-m-d",
-    altInput: true,
-    altFormat: useIt ? "d/m/Y" : "m/d/Y",
-    allowInput: false,
-    ...(useIt && flatpickr.l10ns?.it ? { locale: flatpickr.l10ns.it } : {})
-  });
-
+    const useIt = state.profile.language === "it";
+    flatpickr(examDateInput, {
+      dateFormat: "Y-m-d",
+      altInput: true,
+      altFormat: useIt ? "d/m/Y" : "m/d/Y",
+      allowInput: false,
+      ...(useIt && flatpickr.l10ns?.it ? { locale: flatpickr.l10ns.it } : {})
+    });
+  }
   setupStudyTimePicker();
 }
 
