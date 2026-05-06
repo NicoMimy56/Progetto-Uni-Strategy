@@ -1,0 +1,177 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{listings}
+\geometry{margin=2.5cm}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  tabsize=2,
+  showstringspaces=false,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray}
+}
+
+\title{Uni-Strategy\\Relazione tecnica sul funzionamento del codice}
+\author{Documento generato per il progetto ProgettoUniStrategy}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Introduzione}
+Uni-Strategy è un'applicazione web per la gestione del percorso universitario: esami (materia, CFU, voto, data, stato), calcolo della media ponderata, simulazione di esami futuri, piano di studio settimanale, calendario, obiettivi di media e impostazioni personali (lingua, tema, CFU totali, voto di laurea obiettivo). Il codice è organizzato in un \textbf{server Node.js} (Express) con persistenza \textbf{SQLite}, e un \textbf{client} servito come file statici (\texttt{index.html}, \texttt{styles.css}, \texttt{app.js}) che comunica con il server tramite \textbf{API REST} e cookie di sessione.
+
+\section{Architettura generale}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Avvio}: lo script \texttt{npm start} / \texttt{npm run dev} esegue \texttt{node server.js}, che apre la porta \texttt{3000} (o \texttt{PORT} da ambiente).
+  \item \textbf{Static assets}: Express serve la cartella del progetto; le richieste non API che non corrispondono a file inviano \texttt{index.html} (Single Page Application leggera).
+  \item \textbf{Autenticazione}: cookie \texttt{HttpOnly} \texttt{unistrategy\_sid} con token di sessione salvato nel database; le rotte protette richiedono \texttt{requireAuth}.
+  \item \textbf{Client}: \texttt{app.js} tiene uno \texttt{state} in memoria (esami, piano studio, simulazioni, profilo, obiettivo media) popolato da \texttt{/api/bootstrap} dopo il login.
+\end{itemize}
+
+\section{Backend: \texttt{server.js}}
+
+\subsection{Tecnologie e configurazione}
+Il server usa \texttt{express} per il routing e \texttt{better-sqlite3} per accesso sincrono efficiente al file \texttt{unistrategy.db}. È impostato \texttt{journal\_mode = WAL} per migliorare concorrenza lettura/scrittura. Il body delle richieste JSON è gestito da \texttt{express.json()}.
+
+\subsection{Schema database}
+All'avvio viene eseguito \texttt{CREATE TABLE IF NOT EXISTS} per:
+\begin{description}[style=nextline]
+  \item[\texttt{users}] Utente: email univoca, \texttt{password\_hash} e \texttt{password\_salt}.
+  \item[\texttt{user\_sessions}] Token di sessione, \texttt{user\_id}, \texttt{expires\_at}.
+  \item[\texttt{exams}] Esame: \texttt{user\_id}, materia, crediti, voto (\texttt{REAL}, opzionale), data esame (\texttt{TEXT} ISO), stato con vincolo \texttt{CHECK} su tre valori ammessi.
+  \item[\texttt{study\_sessions}] Sessione di studio: id testuale (UUID dal client), giorno, materia, descrizione, orari inizio/fine.
+  \item[\texttt{settings}] Tabella chiave-valore globale (legacy/minima).
+  \item[\texttt{user\_settings}] Preferenze per utente: ad es.\ \texttt{target\_gpa} e \texttt{profile} (JSON serializzato).
+  \item[\texttt{simulated\_exams}] Esami solo simulati: materia, CFU, voto pianificato.
+\end{description}
+Sono presenti migrazioni leggere: se mancano colonne (\texttt{user\_id}, \texttt{description}) si esegue \texttt{ALTER TABLE}.
+
+\subsection{Sicurezza delle password e sessioni}
+\begin{itemize}[leftmargin=*]
+  \item Le password non sono mai memorizzate in chiaro: si usa \texttt{crypto.scryptSync} con sale casuale (16 byte esadecimali) e hash 64 byte in esadecimale.
+  \item Al login la password inserita viene ri-hasata con il sale salvato e confrontata con \texttt{password\_hash}.
+  \item La sessione è un token casuale (32 byte hex), memorizzato in \texttt{user\_sessions} con scadenza (TTL circa 30 giorni). Il cookie ha attributi \texttt{HttpOnly}, \texttt{SameSite=Lax}, \texttt{Path=/}.
+  \item \texttt{getSessionUser} valida il token e rimuove le sessioni scadute.
+\end{itemize}
+
+\subsection{Endpoint API (riepilogo)}
+\begin{center}
+\begin{tabular}{@{}llp{7cm}@{}}
+\toprule
+\textbf{Metodo} & \textbf{Percorso} & \textbf{Ruolo} \\
+\midrule
+POST & \texttt{/api/auth/register} & Registrazione; crea sessione e cookie. \\
+POST & \texttt{/api/auth/login} & Login; crea sessione. \\
+POST & \texttt{/api/auth/logout} & Elimina sessione server-side e cancella cookie. \\
+GET & \texttt{/api/auth/me} & Restituisce utente corrente o 401. \\
+GET & \texttt{/api/bootstrap} & Dati iniziali: esami, piano studio, simulazioni, \texttt{targetGpa}, \texttt{profile}, email. \\
+POST & \texttt{/api/exams} & Crea esame (validazione stato/voto/file data). \\
+PUT & \texttt{/api/exams/:id} & Aggiorna esame dell'utente. \\
+DELETE & \texttt{/api/exams/:id} & Elimina singolo esame. \\
+DELETE & \texttt{/api/exams} & Elimina tutti gli esami dell'utente. \\
+POST & \texttt{/api/study-sessions} & Aggiunge sessione (ora inizio $<$ fine). \\
+DELETE & \texttt{/api/study-sessions/:id} & Rimuove sessione. \\
+DELETE & \texttt{/api/study-sessions} & Svuota piano studio. \\
+POST & \texttt{/api/simulated-exams} & Aggiunge riga simulatore (voto 18--31). \\
+DELETE & ... & Singola o tutte simulazioni. \\
+PUT & \texttt{/api/settings/target-gpa} & Salva/obiettivo media 18--31 o elimina chiave se vuoto. \\
+PUT & \texttt{/api/settings/profile} & Salva JSON profilo con validazione (lingua, tema, percorso laurea, CFU, target 66--110). \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Le funzioni \texttt{toExamRow}, \texttt{toStudyRow}, \texttt{toSimulatedExamRow} convertono i nomi colonna snake\_case del DB in camelCase per il JSON verso il client.
+
+\section{Frontend: struttura HTML}
+\texttt{index.html} definisce due ``viste'':
+\begin{enumerate}[label=\arabic*.]
+  \item \textbf{\texttt{\#auth-view}}: login e registrazione (testi italiani base nella pagina).
+  \item \textbf{\texttt{\#app-shell}}: applicazione vera e propria con topbar, tab (\texttt{home}, \texttt{manage}, \texttt{calendar}, \texttt{study}, \texttt{settings}) e sezioni collegate agli script tramite ID (\texttt{exam-table-body}, calendario, grafici canvas, ecc.).
+\end{enumerate}
+Sono inclusi \texttt{flatpickr} (CDN) per la selezione date nel form esami e \texttt{styles.css} per layout, temi, tabelle e griglie responsive.
+
+\section{Frontend: logica in \texttt{app.js}}
+
+\subsection{Stato e costanti}
+Lo stato globale \texttt{state} contiene: \texttt{exams}, \texttt{studyPlan}, \texttt{simulatedExams}, \texttt{targetGpa}, \texttt{profile} (fuso con \texttt{DEFAULT\_PROFILE}), \texttt{homeExamFilter} (\texttt{pending}/\texttt{completed}), \texttt{editingExamId} per edit inline nella tabella esami.
+
+I giorni della settimana sono codificati in inglese (\texttt{Monday}, \ldots) sia nel DB sia nella logica, con traduzione in UI tramite chiavi \texttt{i18next} (\texttt{days.Monday}, ecc.).
+
+\subsection{Internazionalizzazione (i18n)}
+\texttt{initI18n} scarica tutti i file \texttt{/locales/*.json} (versione cache-bust \texttt{APP\_I18N\_VERSION}), inizializza \texttt{i18next} con \texttt{keySeparator: "."} e \texttt{ignoreJSONStructure: false}. La funzione \texttt{t(key)} usa \texttt{i18next} con fallback manuale sul dizionario caricato. \texttt{translateStaticUi} aggiorna nodi \texttt{data-i18n} e placeholder \texttt{data-i18n-placeholder}. Cambio lingua da Impostazioni: \texttt{i18next.changeLanguage}, poi rinnovo picker e \texttt{render()}.
+
+\subsection{Temi}
+\texttt{THEME\_PRESETS} mappa preset (\texttt{classic}, \texttt{forest}, \ldots) a palette CSS tramite variabili \texttt{--primary}, \texttt{--bg}, ecc.; \texttt{applyTheme} le scrive su \texttt{document.documentElement} e applica classe \texttt{theme-dark} se necessario.
+
+\subsection{Comunicazione HTTP}
+\texttt{apiRequest} usa \texttt{fetch} con \texttt{credentials: "same-origin"} (invio cookie), gestisce JSON, \texttt{204 No Content}, e messaggi errore leggibili (evita mostrare HTML come testo errore).
+
+\subsection{Bootstrap e ciclo di vita}
+\texttt{initializeApp} chiama \texttt{/api/auth/me}: se OK carica dati con \texttt{loadAppData} e mostra l'app; altrimenti la schermata auth.\\
+\texttt{loadAppData} chiama \texttt{/api/bootstrap}, normalizza status esami e giorni studio, aggiorna \texttt{i18n}, tema, picker, poi \texttt{render()}.
+
+\subsection{Calcolo medie e CFU}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Media ponderata reale}: \texttt{weightedGpa} considera solo esami \texttt{Completed} con voto numerico valido:
+  $\dfrac{\sum_i \mathrm{voto}_i \cdot \mathrm{CFU}_i}{\sum_i \mathrm{CFU}_i}$.
+  \item \textbf{Media simulata}: \texttt{simulatedGpa} unisce i CFU ponderati degli esami completati alle righe simulate (\texttt{plannedGrade} $\times$ \texttt{credits}), poi stessa formula sul totale.
+  \item \textbf{CFU acquisiti}: somma \texttt{credits} degli esami con stato \texttt{Completed} (il voto può essere assente dalla logica di acquisizione crediti nella UI ma la media usa solo votati validi).
+  \item \textbf{CFU mancanti}: \texttt{totalCfu} del profilo meno acquisiti, non negativo.
+  \item \textbf{Suggerimento obiettivo}: con \texttt{targetGpa} e media attuale, stima della media richiesta sulle CFU restanti usando la formula nella \texttt{render()}.
+\end{itemize}
+
+\subsection{Grafico andamento media}
+\texttt{drawTrendChart} usa \texttt{Canvas 2D} con scaling \texttt{devicePixelRatio}. Ordina implicitamente gli esami completati come in array, calcola la \textbf{media mobile ponderata} progressiva (ogni punto è la media aggiornata dopo ogni esame). Disegna area sotto curva, linea, punti per voto singolo, griglia 18--30, linea tratteggiata rossa per \textbf{target media} utente, linea arancione per media equivalente al \textbf{voto di laurea obiettivo} su scala /30 (conversione $(\mathrm{graduationTarget} \cdot 30) / 110$). \texttt{scheduleTrendChartDraw} usa \texttt{requestAnimationFrame} per ridisegnare al resize o al cambio tab Home.
+
+\subsection{Calendario}
+\texttt{renderCalendar} costruisce una griglia del mese corrente (\texttt{currentCalendarDate}): allineamento lunedì tramite \texttt{(getDay() + 6) \% 7}, celle vuote iniziali \texttt{muted}, evidenziazione ``oggi''. Per ogni giorno mostra chip per esami con \texttt{examDate} uguale all'ISO del giorno e stato diverso da \texttt{Completed}.
+
+\subsection{Piano di studio}
+\texttt{renderStudyBoard} crea sette colonne (\texttt{WEEK\_DAYS}), sessioni filtrate e ordinate per \texttt{start}. Nella tab Piano Studio i pulsanti elimina chiamano DELETE; sulla Home la stessa griglia senza eliminazione. Aggiunta: POST con id \texttt{crypto.randomUUID()}.
+
+\subsection{Gestione esami (UI)}
+\begin{itemize}[leftmargin=*]
+  \item Form creazione: validazione client, regola data passata $\Rightarrow$ forza stato \texttt{Completed}, integrazione \texttt{flatpickr} e \texttt{syncGradeInputByStatus}.
+  \item Tabella ``Tutti gli esami'': modalità lettura con Modifica/Elimina; in modifica riga con input e Salva/Annulla; event delegation su \texttt{exam-table-body}.
+  \item \texttt{"Svuota tutto"}: DELETE collezione esami.
+\end{itemize}
+
+\subsection{Simulatore}
+Form che invia POST \texttt{/api/simulated-exams}; la tabella elenca simulate con pulsante rimozione; messaggio riepilogativo confronta \texttt{weightedGpa} e \texttt{simulatedGpa}. Svuota simulazione: DELETE bulk.
+
+\subsection{Impostazioni}
+Selezione tipo percorso (triennale/magistrale/altro/custom con default CFU), preset voto laurea su /110, tile tema e lingua. Salva tramite PUT \texttt{/api/settings/profile}; toast temporaneo di conferma.
+
+\subsection{Responsive}
+\texttt{setDeviceMode} imposta classi \texttt{device-mobile} / \texttt{device-desktop} su \texttt{body} in base a larghezza e tipo puntatore per adattare CSS (layout calendario, tab, ecc.).
+
+\section{Fogli di stile (\texttt{styles.css})}
+Definisce layout a schede, card, form, tabelle (\texttt{border-collapse}), griglia calendario e colonne piano studio, pulsanti (\texttt{.delete-btn}, \texttt{.ghost-btn}), tema variabili CSS, varianti desktop e regole tema scuro (\texttt{html.theme-dark}), oltre a dettagli di presentazione della riga esame in modifica e fascia auth.
+
+\section{Sicurezza e limiti}
+\begin{itemize}[leftmargin=*]
+  \item Cookie \texttt{HttpOnly} mitiga furto tramite XSS lato script della pagina, ma va comunque evitato di introdurre XSS nell'HTML dinamico.
+  \item Le API filtrano sempre per \texttt{user\_id}: un utente non accede ai dati di altri.
+  \item HTTPS non è configurato nell'app demo: in produzione andrebbe terminato TLS davanti al server.
+  \item Rate limiting e protezioni CSRF avanzate non sono implementati; \texttt{SameSite=Lax} offre moderata protezione per richieste cross-site non GET.
+\end{itemize}
+
+\section{Conclusioni}
+Il progetto Uni-Strategy combina persistenza multi-utente in SQLite, autenticazione basata su sessione, e un client JavaScript vanilla che centralizza stato, calcoli accademici, visualizzazioni (canvas e CSS) e localizzazione. La separazione REST facilita future estensioni (es.\ app mobile che riusa le stesse API).
+
+\vspace{1em}
+\noindent\textit{Per compilare questo documento:} \texttt{pdflatex relazione\_uni\_strategy.tex} (due passaggi per l'indice se necessario).
+
+\end{document}
