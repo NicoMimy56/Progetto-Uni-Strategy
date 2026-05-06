@@ -30,17 +30,19 @@
 \newpage
 
 \section{Introduzione}
-Uni-Strategy è un'applicazione web per la gestione del percorso universitario: esami (materia, CFU, voto, data, stato), calcolo della media ponderata, simulazione di esami futuri, piano di studio settimanale, calendario, obiettivi di media e impostazioni personali (lingua, tema, CFU totali, voto di laurea obiettivo). Il codice è organizzato in un \textbf{server Node.js} (Express) con persistenza \textbf{SQLite}, e un \textbf{client} servito come file statici (\texttt{index.html}, \texttt{styles.css}, \texttt{app.js}) che comunica con il server tramite \textbf{API REST} e cookie di sessione.
+Uni-Strategy è un'applicazione web per la gestione del percorso universitario: esami (materia, CFU, voto, data, stato), calcolo della media ponderata, simulazione di esami futuri, piano di studio settimanale, calendario, obiettivi di media e impostazioni personali (lingua, tema, CFU totali, voto di laurea obiettivo). Il codice è organizzato in un \textbf{server Node.js} (Express) con persistenza \textbf{SQLite}, e un \textbf{client} servito come file statici (\texttt{index.html}, \texttt{styles.css}, moduli nella cartella \texttt{js/} con entry \texttt{js/app.js} di tipo \texttt{type="module"}) che comunica con il server tramite \textbf{API REST} e cookie di sessione.
 
 \section{Architettura generale}
 \begin{itemize}[leftmargin=*]
   \item \textbf{Avvio}: lo script \texttt{npm start} / \texttt{npm run dev} esegue \texttt{node server.js}, che apre la porta \texttt{3000} (o \texttt{PORT} da ambiente).
   \item \textbf{Static assets}: Express serve la cartella del progetto; le richieste non API che non corrispondono a file inviano \texttt{index.html} (Single Page Application leggera).
   \item \textbf{Autenticazione}: cookie \texttt{HttpOnly} \texttt{unistrategy\_sid} con token di sessione salvato nel database; le rotte protette richiedono \texttt{requireAuth}.
-  \item \textbf{Client}: \texttt{app.js} tiene uno \texttt{state} in memoria (esami, piano studio, simulazioni, profilo, obiettivo media) popolato da \texttt{/api/bootstrap} dopo il login.
+  \item \textbf{Client}: i moduli sotto \texttt{js/} (es.\ \texttt{store.js}, \texttt{constants.js}) tengono lo \texttt{state} (esami, piano studio, simulazioni, profilo, obiettivo media) popolato da \texttt{/api/bootstrap} dopo il login; \texttt{app.js} orchestra rendering ed eventi.
 \end{itemize}
 
-\section{Backend: \texttt{server.js}}
+\section{Backend: cartella \texttt{server/} e \texttt{server.js}}
+
+Il file \texttt{server.js} in radice avvia HTTP sulla porta configurabile; la logica Express è in \texttt{server/createApp.js} (middleware, statici e fallback SPA), mentre \texttt{server/database.js}, \texttt{server/auth.js}, \texttt{server/mappers.js}, \texttt{server/routes.js}, \texttt{server/paths.js} e \texttt{server/config.js} separano persistenza, autenticazione, mapping JSON e registrazione API.
 
 \subsection{Tecnologie e configurazione}
 Il server usa \texttt{express} per il routing e \texttt{better-sqlite3} per accesso sincrono efficiente al file \texttt{unistrategy.db}. È impostato \texttt{journal\_mode = WAL} per migliorare concorrenza lettura/scrittura. Il body delle richieste JSON è gestito da \texttt{express.json()}.
@@ -102,9 +104,17 @@ Le funzioni \texttt{toExamRow}, \texttt{toStudyRow}, \texttt{toSimulatedExamRow}
 \end{enumerate}
 Sono inclusi \texttt{flatpickr} (CDN) per la selezione date nel form esami e \texttt{styles.css} per layout, temi, tabelle e griglie responsive.
 
-\section{Frontend: logica in \texttt{app.js}}
+\section{Frontend: moduli JavaScript (\texttt{js/})}
 
-\subsection{Stato e costanti}
+\subsection{File e responsabilità}
+\texttt{constants.js} raggruppa costanti (giorni, lingue supportate, preset tema, CFU default).\\
+\texttt{store.js} espone oggetti \texttt{state}, \texttt{ui}, \texttt{studyTimePickerState}, \texttt{currentCalendarDate} e funzioni \texttt{getExams}/\texttt{saveExams}/\ldots\\
+\texttt{dom.js} esporta riferimenti \texttt{getElementById} agli elementi principali dell'HTML.\\
+\texttt{api.js} contiene solo \texttt{apiRequest}.\\
+\texttt{academic.js} calcoli puri (\texttt{weightedGpa}, \texttt{simulatedGpa}, \texttt{daysRemaining}).\\
+\texttt{app.js} (lungo): tema, i18n, picker date/ora, canvas andamento, calendario, piano studio, \texttt{render()}, listener e bootstrap.
+
+\subsection{Stato}
 Lo stato globale \texttt{state} contiene: \texttt{exams}, \texttt{studyPlan}, \texttt{simulatedExams}, \texttt{targetGpa}, \texttt{profile} (fuso con \texttt{DEFAULT\_PROFILE}), \texttt{homeExamFilter} (\texttt{pending}/\texttt{completed}), \texttt{editingExamId} per edit inline nella tabella esami.
 
 I giorni della settimana sono codificati in inglese (\texttt{Monday}, \ldots) sia nel DB sia nella logica, con traduzione in UI tramite chiavi \texttt{i18next} (\texttt{days.Monday}, ecc.).

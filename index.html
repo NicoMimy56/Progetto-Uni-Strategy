@@ -1,4 +1,14 @@
 <!doctype html>
+<!--
+  Uni-Strategy shell HTML
+  
+  Suddivisione:
+  - `#auth-view` : login/registrazione (visibile se sessione cookie assente/invalid).
+  - `#app-shell`: applicazione autenticata (topbar, tab, contenuti `section.tab-content`).
+  Ogni `<section id="*-tab">` corrisponde a un pulsante `[data-tab="*"]`; la classe `.active`
+  sulla sezione viene spostata via JavaScript quando si clicca sulla nav.
+  Gli id dei form/tabelle sono accoppiati a `dom.js`; non rinominare senza aggiornare codice modulo.
+-->
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -11,6 +21,7 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <!-- Schermata autenticazione (prima caricata se non sei loggato) -->
     <section id="auth-view" class="auth-view">
       <div class="auth-card">
         <h1>Uni-Strategy</h1>
@@ -33,6 +44,7 @@
       </div>
     </section>
 
+    <!-- Shell principale: nascosta (`.hidden`) finché `showAppView` non viene chiamato da app.js dopo login/sessione -->
     <div id="app-shell" class="hidden">
       <header class="topbar">
         <div>
@@ -406,6 +418,7 @@
     <script src="/vendor/i18next/i18next.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
-    <script src="./app.js?v=2026-05-06-7"></script>
+    <!-- Client modulare ES2020: vedi cartella `js/` (constants, store, dom, api, academic + app.js) -->
+    <script type="module" src="./js/app.js?v=2026-05-06-10"></script>
   </body>
 </html>

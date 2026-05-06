@@ -1,3 +1,16 @@
+/**
+ * Uni-Strategy — stylesheet principale (layout + temi chiaro/scuri + responsive).
+ *
+ * Architettura visiva:
+ * - Variabili globali `:root`: palette di default poi sovrascritte da JS (`applyTheme` scrive nella root del documento CSS inline).
+ * - Struttura: topbar fisso colore `--primary-dark`, nav tab, griglia card `.layout`.
+ * - Classi stato `device-mobile` vs `device-desktop` aggiunte da `setDeviceMode()` in app.js cambiano breakpoints su calendario/tab.
+ * - Sezione tema scuro tramite combinazione `html.theme-dark` definita più in fondo nel file.
+ * - Alcune parti (grafico donut CFU Home) combinano anche stile inline dalla funzione JS `render` (conic-gradient).
+ *
+ * Regola generale modifiche qui: cercare anche riferimento colore dentro `THEME_PRESETS` (js/constants.js) per coerenza brand.
+ */
+
 * {
   box-sizing: border-box;
 }
