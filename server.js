@@ -323,6 +323,47 @@ app.post("/api/exams", requireAuth, (req, res) => {
   return res.status(201).json(toExamRow(inserted));
 });
 
+app.put("/api/exams/:id", requireAuth, (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    return res.status(400).json({ error: "Invalid exam id." });
+  }
+  const existing = db
+    .prepare("SELECT * FROM exams WHERE id = ? AND user_id = ?")
+    .get(id, req.user.id);
+  if (!existing) {
+    return res.status(404).json({ error: "Exam not found." });
+  }
+
+  const credits = Number(req.body.credits);
+  const status = String(req.body.status || "");
+  const examDate = req.body.examDate ? String(req.body.examDate) : null;
+  const gradeInput = req.body.grade;
+  const parsedGrade = gradeInput === null || gradeInput === "" ? null : Number(gradeInput);
+
+  if (!Number.isFinite(credits) || credits <= 0) {
+    return res.status(400).json({ error: "Invalid credits." });
+  }
+  if (!["To Take", "In Preparation", "Completed"].includes(status)) {
+    return res.status(400).json({ error: "Invalid exam status." });
+  }
+  if (status === "Completed" && !Number.isFinite(parsedGrade)) {
+    return res.status(400).json({ error: "Completed exam requires a grade." });
+  }
+  const safeGrade = status === "Completed" ? parsedGrade : null;
+
+  db.prepare(
+    `UPDATE exams
+     SET credits = ?, grade = ?, exam_date = ?, status = ?
+     WHERE id = ? AND user_id = ?`
+  ).run(credits, safeGrade, examDate, status, id, req.user.id);
+
+  const updated = db
+    .prepare("SELECT * FROM exams WHERE id = ? AND user_id = ?")
+    .get(id, req.user.id);
+  return res.json(toExamRow(updated));
+});
+
 app.delete("/api/exams/:id", requireAuth, (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isFinite(id)) {
@@ -456,6 +497,10 @@ app.put("/api/settings/profile", requireAuth, (req, res) => {
   ).run(req.user.id, JSON.stringify(profile));
 
   return res.json({ profile });
+});
+
+app.use("/api", (_req, res) => {
+  return res.status(404).json({ error: "API endpoint not found." });
 });
 
 app.use((_req, res) => {

@@ -159,7 +159,10 @@
                   <option value="Completed">Completed</option>
                 </select>
               </label>
-              <button type="submit" data-i18n="manage.saveExam">Salva esame</button>
+              <div class="form-actions">
+                <button type="submit" data-i18n="manage.saveExam">Salva esame</button>
+                <button id="clear-exam-form-btn" type="button" class="ghost-btn" data-i18n="manage.clearFields">Svuota campi</button>
+              </div>
             </form>
           </section>
 
@@ -198,7 +201,7 @@
           <section class="card full-width">
             <div class="table-head">
               <h2 data-i18n="manage.allExams">Tutti gli esami</h2>
-              <button id="clear-btn" class="danger" type="button" data-i18n="manage.clearAll">Svuota tutto</button>
+              <button id="clear-btn" class="delete-btn" type="button" data-i18n="manage.clearAll">Svuota tutto</button>
             </div>
             <table>
               <thead>
@@ -274,7 +277,7 @@
           <section class="card full-width">
             <div class="table-head">
               <h2 data-i18n="study.weekTitle">Settimana di studio</h2>
-              <button id="clear-study-btn" class="danger" type="button" data-i18n="study.clearPlan">Svuota piano</button>
+              <button id="clear-study-btn" class="delete-btn" type="button" data-i18n="study.clearPlan">Svuota piano</button>
             </div>
             <div id="study-board" class="study-board"></div>
           </section>

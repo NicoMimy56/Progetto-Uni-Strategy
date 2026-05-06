@@ -1,6 +1,6 @@
 const WEEK_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const CALENDAR_WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const APP_I18N_VERSION = "2026-05-06-7";
+const APP_I18N_VERSION = "2026-05-06-9";
 const SUPPORTED_LANGUAGES = ["it", "en", "fr", "de", "ro", "es"];
 const CALENDAR_LOCALES = {
   it: "it-IT",
@@ -25,6 +25,7 @@ const creditsPercentageEl = document.getElementById("credits-percentage");
 const simulatorResultEl = document.getElementById("simulator-result");
 const clearSimBtn = document.getElementById("clear-sim-btn");
 const clearBtn = document.getElementById("clear-btn");
+const clearExamFormBtn = document.getElementById("clear-exam-form-btn");
 const trendChartEl = document.getElementById("trend-chart");
 const targetAverageHomeEl = document.getElementById("target-average-home");
 const targetAverageTipEl = document.getElementById("target-average-tip");
@@ -131,7 +132,8 @@ const state = {
   simulatedExams: [],
   targetGpa: 0,
   profile: { ...DEFAULT_PROFILE },
-  homeExamFilter: "pending"
+  homeExamFilter: "pending",
+  editingExamId: null
 };
 const studyTimePickerState = {
   panel: null,
@@ -471,6 +473,55 @@ function syncGradeInputByStatus() {
   }
 }
 
+function getTodayIsoDate() {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return now.toISOString().slice(0, 10);
+}
+
+function isDateBeforeToday(dateStr) {
+  return typeof dateStr === "string" && dateStr !== "" && dateStr < getTodayIsoDate();
+}
+
+function applyExamDateStatusRule() {
+  if (isDateBeforeToday(examDateInput.value)) {
+    examStatusInput.value = "Completed";
+  }
+  syncGradeInputByStatus();
+}
+
+function syncExamEditGradeInput(row) {
+  const statusSelect = row.querySelector(".exam-edit-status");
+  const gradeInput = row.querySelector(".exam-edit-grade");
+  if (!statusSelect || !gradeInput) return;
+  const isCompleted = statusSelect.value === "Completed";
+  gradeInput.disabled = !isCompleted;
+  gradeInput.required = isCompleted;
+  if (!isCompleted) {
+    gradeInput.value = "";
+  }
+}
+
+function bindExamEditRowInputs() {
+  examTableBody.querySelectorAll("tr[data-editing='true']").forEach((row) => {
+    const statusSelect = row.querySelector(".exam-edit-status");
+    const dateInput = row.querySelector(".exam-edit-date");
+    if (statusSelect) {
+      statusSelect.addEventListener("change", () => {
+        syncExamEditGradeInput(row);
+      });
+    }
+    if (dateInput) {
+      dateInput.addEventListener("change", () => {
+        if (isDateBeforeToday(dateInput.value) && statusSelect) {
+          statusSelect.value = "Completed";
+        }
+        syncExamEditGradeInput(row);
+      });
+    }
+  });
+}
+
 function setupDateTimePickers() {
   if (typeof flatpickr === "function") {
     destroyDatePickers();
@@ -502,20 +553,38 @@ function showSettingsSavedToast() {
 async function apiRequest(path, options = {}) {
   const response = await fetch(path, {
     headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
     ...options
   });
+  const contentType = response.headers.get("content-type") || "";
   if (!response.ok) {
     let message = "Request failed";
     try {
-      const body = await response.json();
-      message = body.error || message;
+      if (contentType.includes("application/json")) {
+        const body = await response.json();
+        message = body.error || message;
+      } else {
+        const bodyText = await response.text();
+        if (bodyText.startsWith("<!doctype") || bodyText.startsWith("<html")) {
+          message = "Unexpected HTML response from API endpoint.";
+        }
+      }
     } catch {
       // noop
     }
     throw new Error(message);
   }
   if (response.status === 204) return null;
+  if (!contentType.includes("application/json")) {
+    throw new Error("API did not return JSON.");
+  }
   return response.json();
+}
+
+function resetAddExamForm() {
+  examForm.reset();
+  syncGradeInputByStatus();
+  applyExamDateStatusRule();
 }
 
 function setAuthMode(mode) {
@@ -908,7 +977,7 @@ function renderStudyBoard(containerEl, showDeleteButton) {
           ? `<p class="study-item-description">${session.description}</p>`
           : "";
         const deleteBtnHtml = showDeleteButton
-          ? `<button class="danger" data-session-id="${session.id}" type="button">${t("study.deleteBtn")}</button>`
+          ? `<button class="delete-btn" data-session-id="${session.id}" type="button">${t("study.deleteBtn")}</button>`
           : "";
         item.innerHTML = `
           <strong>${session.subject}</strong>
@@ -938,17 +1007,49 @@ function render() {
 
   exams.forEach((exam) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${exam.subject}</td>
-      <td>${exam.credits}</td>
-      <td>${exam.grade ?? "-"}</td>
-      <td>${exam.examDate || "-"}</td>
-      <td>${formatExamStatus(exam.status)}</td>
-      <td>${formatDaysRemaining(exam)}</td>
-      <td><button data-id="${exam.id}" class="danger">${t("study.deleteBtn")}</button></td>
-    `;
+    if (state.editingExamId === exam.id) {
+      tr.classList.add("exam-edit-row");
+      tr.dataset.editing = "true";
+      tr.innerHTML = `
+        <td class="exam-edit-subject-cell">${exam.subject}</td>
+        <td class="exam-edit-cell exam-edit-cell-credits"><input class="exam-edit-credits row-field" type="number" min="1" step="1" value="${exam.credits}" /></td>
+        <td class="exam-edit-cell exam-edit-cell-grade"><input class="exam-edit-grade row-field" type="number" min="18" max="31" step="0.1" value="${exam.grade ?? ""}" /></td>
+        <td class="exam-edit-cell exam-edit-cell-date"><input class="exam-edit-date row-field" type="date" value="${exam.examDate || ""}" /></td>
+        <td class="exam-edit-cell exam-edit-status-cell">
+          <select class="exam-edit-status row-field">
+            <option value="To Take">${t("status.toTake")}</option>
+            <option value="In Preparation">${t("status.inPrep")}</option>
+            <option value="Completed">${t("status.completed")}</option>
+          </select>
+        </td>
+        <td class="exam-edit-days-cell">${formatDaysRemaining(exam)}</td>
+        <td class="exam-row-actions exam-edit-actions-cell">
+          <button type="button" data-id="${exam.id}" data-action="save" class="exam-edit-action-btn">${t("manage.saveEditBtn")}</button>
+          <button type="button" data-id="${exam.id}" data-action="cancel" class="ghost-btn exam-edit-action-btn">${t("manage.cancelEditBtn")}</button>
+        </td>
+      `;
+      const statusSelect = tr.querySelector(".exam-edit-status");
+      if (statusSelect) {
+        statusSelect.value = exam.status;
+      }
+      syncExamEditGradeInput(tr);
+    } else {
+      tr.innerHTML = `
+        <td>${exam.subject}</td>
+        <td>${exam.credits}</td>
+        <td>${exam.grade ?? "-"}</td>
+        <td>${exam.examDate || "-"}</td>
+        <td>${formatExamStatus(exam.status)}</td>
+        <td>${formatDaysRemaining(exam)}</td>
+        <td class="exam-row-actions">
+          <button type="button" data-id="${exam.id}" data-action="edit" class="ghost-btn">${t("manage.editBtn")}</button>
+          <button type="button" data-id="${exam.id}" data-action="delete" class="delete-btn">${t("study.deleteBtn")}</button>
+        </td>
+      `;
+    }
     examTableBody.appendChild(tr);
   });
+  bindExamEditRowInputs();
 
   const upcomingExams = exams
     .filter((e) =>
@@ -1068,7 +1169,7 @@ function render() {
       <td>${exam.subject}</td>
       <td>${exam.credits}</td>
       <td>${exam.plannedGrade}</td>
-      <td><button class="danger" data-sim-id="${exam.id}" type="button">${t("study.deleteBtn")}</button></td>
+      <td><button class="delete-btn" data-sim-id="${exam.id}" type="button">${t("study.deleteBtn")}</button></td>
     `;
     simTableBody.appendChild(tr);
   });
@@ -1081,7 +1182,11 @@ examForm.addEventListener("submit", async (event) => {
   const gradeValue = document.getElementById("grade").value;
   const rawGrade = gradeValue === "" ? null : Number(gradeValue);
   const examDate = document.getElementById("exam-date").value;
-  const status = document.getElementById("status").value;
+  let status = document.getElementById("status").value;
+  if (isDateBeforeToday(examDate)) {
+    status = "Completed";
+    examStatusInput.value = status;
+  }
   const grade = status === "Completed" ? rawGrade : null;
 
   if (!subject || !Number.isFinite(credits) || credits <= 0) return;
@@ -1093,22 +1198,66 @@ examForm.addEventListener("submit", async (event) => {
       body: JSON.stringify({ subject, credits, grade, examDate, status })
     });
     saveExams([created, ...getExams()]);
-    examForm.reset();
-    syncGradeInputByStatus();
+    resetAddExamForm();
     render();
   } catch (error) {
     alert(error.message);
   }
 });
 
+clearExamFormBtn?.addEventListener("click", () => {
+  resetAddExamForm();
+});
+
 examTableBody.addEventListener("click", async (event) => {
-  const target = event.target;
-  if (target.tagName !== "BUTTON") return;
+  const target = event.target.closest("button");
+  if (!target) return;
   const id = Number(target.dataset.id);
+  const action = target.dataset.action;
   if (!Number.isFinite(id)) return;
+
+  if (action === "edit") {
+    state.editingExamId = id;
+    render();
+    return;
+  }
+  if (action === "cancel") {
+    state.editingExamId = null;
+    render();
+    return;
+  }
+  if (action === "save") {
+    const row = target.closest("tr");
+    if (!row) return;
+    const credits = Number(row.querySelector(".exam-edit-credits")?.value);
+    const status = row.querySelector(".exam-edit-status")?.value;
+    const examDate = row.querySelector(".exam-edit-date")?.value || null;
+    const gradeValue = row.querySelector(".exam-edit-grade")?.value ?? "";
+    const rawGrade = gradeValue === "" ? null : Number(gradeValue);
+    const grade = status === "Completed" ? rawGrade : null;
+    if (!Number.isFinite(credits) || credits <= 0) return;
+    if (!["To Take", "In Preparation", "Completed"].includes(status)) return;
+    if (status === "Completed" && !Number.isFinite(grade)) return;
+    try {
+      const updated = await apiRequest(`/api/exams/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({ credits, grade, examDate, status })
+      });
+      saveExams(getExams().map((exam) => (exam.id === id ? updated : exam)));
+      state.editingExamId = null;
+      render();
+    } catch (error) {
+      alert(error.message);
+    }
+    return;
+  }
+  if (action !== "delete") return;
   try {
     await apiRequest(`/api/exams/${id}`, { method: "DELETE" });
     saveExams(getExams().filter((exam) => exam.id !== id));
+    if (state.editingExamId === id) {
+      state.editingExamId = null;
+    }
     render();
   } catch (error) {
     alert(error.message);
@@ -1209,6 +1358,7 @@ clearStudyBtn.addEventListener("click", async () => {
 });
 
 examStatusInput.addEventListener("change", syncGradeInputByStatus);
+examDateInput.addEventListener("change", applyExamDateStatusRule);
 homeShowPendingBtn.addEventListener("click", () => {
   state.homeExamFilter = "pending";
   render();

@@ -212,13 +212,108 @@ button {
   font-weight: 600;
 }
 
-.danger {
-  background: #dc2626;
+.exam-row-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  align-items: center;
+  min-width: 150px;
+}
+
+.exam-row-actions button {
+  padding: 0.4rem 0.62rem;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.exam-row-actions input,
+.exam-row-actions select {
+  max-width: 100%;
+}
+
+.delete-btn {
+  background: #fdeaea;
+  border: 1px solid #efb8b8;
+  color: #9b2c2c;
+}
+
+.delete-btn:hover {
+  background: #f8dede;
 }
 
 .ghost-btn {
   background: #e5e7eb;
   color: #1f2937;
+}
+
+#exam-table-body td .row-field,
+#exam-table-body td .exam-edit-status {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#exam-table-body tr.exam-edit-row td {
+  vertical-align: middle;
+}
+
+#exam-table-body tr.exam-edit-row td.exam-edit-cell {
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+}
+
+#exam-table-body tr.exam-edit-row td.exam-edit-cell .row-field {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+}
+
+#exam-table-body tr.exam-edit-row .exam-edit-date {
+  min-width: 130px;
+}
+
+#exam-table-body tr.exam-edit-row .exam-edit-status {
+  min-width: 138px;
+}
+
+#exam-table-body tr.exam-edit-row td.exam-edit-actions-cell {
+  min-width: 0;
+}
+
+#exam-table-body tr.exam-edit-row td.exam-edit-actions-cell .exam-edit-action-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 900px) {
+  #exam-table-body tr.exam-edit-row .exam-edit-date,
+  #exam-table-body tr.exam-edit-row .exam-edit-status {
+    min-width: 0;
+  }
+
+  #exam-table-body tr.exam-edit-row td.exam-edit-actions-cell {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  #exam-table-body tr.exam-edit-row td.exam-edit-actions-cell .exam-edit-action-btn {
+    width: 100%;
+    white-space: normal;
+    line-height: 1.2;
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.form-actions button {
+  flex: 1;
 }
 
 .list-filters {
