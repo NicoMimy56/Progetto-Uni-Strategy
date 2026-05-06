@@ -1,6 +1,6 @@
 const WEEK_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const CALENDAR_WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const APP_I18N_VERSION = "2026-05-06-5";
+const APP_I18N_VERSION = "2026-05-06-6";
 const SUPPORTED_LANGUAGES = ["it", "en", "fr", "de", "ro", "es"];
 const CALENDAR_LOCALES = {
   it: "it-IT",
@@ -51,6 +51,14 @@ const totalCfuInput = document.getElementById("total-cfu-input");
 const graduationTargetInput = document.getElementById("graduation-target-input");
 const saveSettingsBtn = document.getElementById("save-settings-btn");
 const settingsSavedToastEl = document.getElementById("settings-saved-toast");
+const authViewEl = document.getElementById("auth-view");
+const appShellEl = document.getElementById("app-shell");
+const authStatusEl = document.getElementById("auth-status");
+const authLoginTabBtn = document.getElementById("auth-login-tab");
+const authRegisterTabBtn = document.getElementById("auth-register-tab");
+const authLoginForm = document.getElementById("auth-login-form");
+const authRegisterForm = document.getElementById("auth-register-form");
+const logoutBtn = document.getElementById("logout-btn");
 
 const THEME_PRESETS = {
   classic: {
@@ -132,6 +140,7 @@ const studyTimePickerState = {
   valueLabel: null
 };
 let settingsToastTimer = null;
+let authMode = "login";
 
 function applyTheme(theme) {
   const root = document.documentElement;
@@ -503,6 +512,26 @@ async function apiRequest(path, options = {}) {
   }
   if (response.status === 204) return null;
   return response.json();
+}
+
+function setAuthMode(mode) {
+  authMode = mode;
+  authLoginTabBtn.classList.toggle("active", mode === "login");
+  authRegisterTabBtn.classList.toggle("active", mode === "register");
+  authLoginForm.classList.toggle("hidden", mode !== "login");
+  authRegisterForm.classList.toggle("hidden", mode !== "register");
+  if (authStatusEl) authStatusEl.textContent = "";
+}
+
+function showAuthView(message = "") {
+  authViewEl.classList.remove("hidden");
+  appShellEl.classList.add("hidden");
+  if (authStatusEl) authStatusEl.textContent = message;
+}
+
+function showAppView() {
+  authViewEl.classList.add("hidden");
+  appShellEl.classList.remove("hidden");
 }
 
 function setDeviceMode() {
@@ -1199,6 +1228,56 @@ saveSettingsBtn.addEventListener("click", async () => {
   }
 });
 
+authLoginTabBtn.addEventListener("click", () => setAuthMode("login"));
+authRegisterTabBtn.addEventListener("click", () => setAuthMode("register"));
+
+authLoginForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const email = document.getElementById("auth-login-email").value.trim();
+  const password = document.getElementById("auth-login-password").value;
+  try {
+    await apiRequest("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password })
+    });
+    authLoginForm.reset();
+    await loadAppData();
+    showAppView();
+  } catch (error) {
+    showAuthView(error.message);
+  }
+});
+
+authRegisterForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const email = document.getElementById("auth-register-email").value.trim();
+  const password = document.getElementById("auth-register-password").value;
+  try {
+    await apiRequest("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ email, password })
+    });
+    authRegisterForm.reset();
+    await loadAppData();
+    showAppView();
+  } catch (error) {
+    showAuthView(error.message);
+  }
+});
+
+logoutBtn.addEventListener("click", async () => {
+  try {
+    await apiRequest("/api/auth/logout", { method: "POST" });
+  } catch {
+    // noop
+  }
+  state.exams = [];
+  state.studyPlan = [];
+  state.targetGpa = 0;
+  state.profile = { ...DEFAULT_PROFILE };
+  showAuthView("Disconnesso.");
+});
+
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => {
     const selectedTab = button.dataset.tab;
@@ -1238,32 +1317,40 @@ simulatorForm.addEventListener("submit", (event) => {
 
 setDeviceMode();
 syncGradeInputByStatus();
+async function loadAppData() {
+  const data = await apiRequest("/api/bootstrap");
+  state.exams = (data.exams || []).map((exam) => ({
+    ...exam,
+    status: normalizeExamStatus(exam.status)
+  }));
+  state.studyPlan = (data.studyPlan || []).map((session) => ({
+    ...session,
+    day: normalizeStudyDay(session.day),
+    description: session.description || ""
+  }));
+  state.targetGpa = Number.isFinite(data.targetGpa) ? data.targetGpa : 0;
+  state.profile = data.profile ? { ...DEFAULT_PROFILE, ...data.profile } : { ...DEFAULT_PROFILE };
+  if (!SUPPORTED_LANGUAGES.includes(state.profile.language)) {
+    state.profile.language = DEFAULT_PROFILE.language;
+  }
+  if (!i18nReady) await initI18n(state.profile.language);
+  else await i18next.changeLanguage(state.profile.language);
+  document.documentElement.lang = state.profile.language;
+  await translateStaticUi();
+  syncProfileInputs();
+  applyTheme(getCurrentTheme());
+  setupDateTimePickers();
+  render();
+}
+
 async function initializeApp() {
   try {
-    const data = await apiRequest("/api/bootstrap");
-    state.exams = (data.exams || []).map((exam) => ({
-      ...exam,
-      status: normalizeExamStatus(exam.status)
-    }));
-    state.studyPlan = (data.studyPlan || []).map((session) => ({
-      ...session,
-      day: normalizeStudyDay(session.day),
-      description: session.description || ""
-    }));
-    state.targetGpa = Number.isFinite(data.targetGpa) ? data.targetGpa : 0;
-    state.profile = data.profile ? { ...DEFAULT_PROFILE, ...data.profile } : { ...DEFAULT_PROFILE };
-    if (!SUPPORTED_LANGUAGES.includes(state.profile.language)) {
-      state.profile.language = DEFAULT_PROFILE.language;
-    }
-    await initI18n(state.profile.language);
-    document.documentElement.lang = state.profile.language;
-    translateStaticUi();
-    syncProfileInputs();
-    applyTheme(getCurrentTheme());
-    setupDateTimePickers();
-    render();
-  } catch (error) {
-    alert(i18nReady ? t("loadError", { message: error.message }) : error.message);
+    await apiRequest("/api/auth/me");
+    await loadAppData();
+    showAppView();
+  } catch {
+    showAuthView();
+    setAuthMode("login");
   }
 }
 

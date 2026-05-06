@@ -11,20 +11,46 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <header class="topbar">
-      <h1>Uni-Strategy</h1>
-      <p data-i18n="brandTagline">Your academic journey, fully under control.</p>
-    </header>
+    <section id="auth-view" class="auth-view">
+      <div class="auth-card">
+        <h1>Uni-Strategy</h1>
+        <p>Accedi per vedere solo i tuoi dati.</p>
+        <div class="auth-tabs">
+          <button id="auth-login-tab" class="auth-tab-btn active" type="button">Login</button>
+          <button id="auth-register-tab" class="auth-tab-btn" type="button">Registrati</button>
+        </div>
+        <form id="auth-login-form" class="auth-form">
+          <label>Email<input id="auth-login-email" type="email" required /></label>
+          <label>Password<input id="auth-login-password" type="password" minlength="6" required /></label>
+          <button type="submit">Accedi</button>
+        </form>
+        <form id="auth-register-form" class="auth-form hidden">
+          <label>Email<input id="auth-register-email" type="email" required /></label>
+          <label>Password<input id="auth-register-password" type="password" minlength="6" required /></label>
+          <button type="submit">Crea account</button>
+        </form>
+        <p id="auth-status" class="auth-status"></p>
+      </div>
+    </section>
 
-    <nav class="tabs">
-      <button type="button" class="tab-btn active" data-tab="home" data-i18n="tabs.home">Home</button>
-      <button type="button" class="tab-btn" data-tab="manage" data-i18n="tabs.manage">Gestione Esami</button>
-      <button type="button" class="tab-btn" data-tab="calendar" data-i18n="tabs.calendar">Calendario</button>
-      <button type="button" class="tab-btn" data-tab="study" data-i18n="tabs.study">Piano Studio</button>
-      <button type="button" class="tab-btn" data-tab="settings" data-i18n="tabs.settings">Impostazioni</button>
-    </nav>
+    <div id="app-shell" class="hidden">
+      <header class="topbar">
+        <div>
+          <h1>Uni-Strategy</h1>
+          <p data-i18n="brandTagline">Your academic journey, fully under control.</p>
+        </div>
+        <button id="logout-btn" class="ghost-btn" type="button">Logout</button>
+      </header>
 
-    <main>
+      <nav class="tabs">
+        <button type="button" class="tab-btn active" data-tab="home" data-i18n="tabs.home">Home</button>
+        <button type="button" class="tab-btn" data-tab="manage" data-i18n="tabs.manage">Gestione Esami</button>
+        <button type="button" class="tab-btn" data-tab="calendar" data-i18n="tabs.calendar">Calendario</button>
+        <button type="button" class="tab-btn" data-tab="study" data-i18n="tabs.study">Piano Studio</button>
+        <button type="button" class="tab-btn" data-tab="settings" data-i18n="tabs.settings">Impostazioni</button>
+      </nav>
+
+      <main>
       <section id="home-tab" class="tab-content active">
         <div class="layout">
           <section class="card full-width">
@@ -354,12 +380,13 @@
           </section>
         </div>
       </section>
-    </main>
-    <div id="settings-saved-toast" class="settings-saved-toast" aria-live="polite" role="status"></div>
+      </main>
+      <div id="settings-saved-toast" class="settings-saved-toast" aria-live="polite" role="status"></div>
+    </div>
 
     <script src="/vendor/i18next/i18next.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
-    <script src="./app.js?v=2026-05-06-5"></script>
+    <script src="./app.js?v=2026-05-06-6"></script>
   </body>
 </html>
