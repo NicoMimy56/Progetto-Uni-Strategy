@@ -1,6 +1,6 @@
 const WEEK_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const CALENDAR_WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const APP_I18N_VERSION = "2026-05-06-6";
+const APP_I18N_VERSION = "2026-05-06-7";
 const SUPPORTED_LANGUAGES = ["it", "en", "fr", "de", "ro", "es"];
 const CALENDAR_LOCALES = {
   it: "it-IT",
@@ -14,6 +14,7 @@ const CALENDAR_LOCALES = {
 const examForm = document.getElementById("exam-form");
 const simulatorForm = document.getElementById("simulator-form");
 const examTableBody = document.getElementById("exam-table-body");
+const simTableBody = document.getElementById("sim-table-body");
 const upcomingTableBody = document.getElementById("upcoming-table-body");
 const gpaEl = document.getElementById("gpa");
 const acquiredCreditsEl = document.getElementById("acquired-credits");
@@ -22,6 +23,7 @@ const remainingCreditsEl = document.getElementById("remaining-credits");
 const creditsChartEl = document.getElementById("credits-chart");
 const creditsPercentageEl = document.getElementById("credits-percentage");
 const simulatorResultEl = document.getElementById("simulator-result");
+const clearSimBtn = document.getElementById("clear-sim-btn");
 const clearBtn = document.getElementById("clear-btn");
 const trendChartEl = document.getElementById("trend-chart");
 const targetAverageHomeEl = document.getElementById("target-average-home");
@@ -126,6 +128,7 @@ const DEFAULT_PROFILE = {
 const state = {
   exams: [],
   studyPlan: [],
+  simulatedExams: [],
   targetGpa: 0,
   profile: { ...DEFAULT_PROFILE },
   homeExamFilter: "pending"
@@ -141,6 +144,7 @@ const studyTimePickerState = {
 };
 let settingsToastTimer = null;
 let authMode = "login";
+let trendRafId = null;
 
 function applyTheme(theme) {
   const root = document.documentElement;
@@ -562,6 +566,14 @@ function saveStudyPlan(plan) {
   state.studyPlan = plan;
 }
 
+function getSimulatedExams() {
+  return state.simulatedExams;
+}
+
+function saveSimulatedExams(list) {
+  state.simulatedExams = list;
+}
+
 function daysRemaining(dateStr) {
   if (!dateStr) return "-";
   const today = new Date();
@@ -589,7 +601,35 @@ function weightedGpa(exams) {
   return credits > 0 ? weighted / credits : 0;
 }
 
+function simulatedGpa(exams, simulatedExams) {
+  const completed = exams.filter((e) => e.status === "Completed" && Number.isFinite(e.grade));
+  const weightedReal = completed.reduce((acc, e) => acc + e.grade * e.credits, 0);
+  const creditsReal = completed.reduce((acc, e) => acc + e.credits, 0);
+  const weightedSim = simulatedExams.reduce((acc, e) => acc + e.plannedGrade * e.credits, 0);
+  const creditsSim = simulatedExams.reduce((acc, e) => acc + e.credits, 0);
+  const totalCredits = creditsReal + creditsSim;
+  return totalCredits > 0 ? (weightedReal + weightedSim) / totalCredits : 0;
+}
+
+function isTrendChartVisible() {
+  if (!trendChartEl) return false;
+  const homeTab = document.getElementById("home-tab");
+  if (!homeTab || !homeTab.classList.contains("active")) return false;
+  return trendChartEl.clientWidth > 0;
+}
+
+function scheduleTrendChartDraw() {
+  if (trendRafId) {
+    cancelAnimationFrame(trendRafId);
+  }
+  trendRafId = requestAnimationFrame(() => {
+    trendRafId = null;
+    drawTrendChart(getExams(), getTargetGpa(), state.profile.graduationTarget);
+  });
+}
+
 function drawTrendChart(exams, targetGpa, graduationTarget) {
+  if (!isTrendChartVisible()) return;
   const ctx = trendChartEl.getContext("2d");
   const cssWidth = Math.max(280, trendChartEl.clientWidth || 300);
   const cssHeight = 260;
@@ -891,8 +931,10 @@ function render() {
   homeShowCompletedBtn.textContent = t("completedBtn");
 
   const exams = getExams();
+  const simulatedExams = getSimulatedExams();
   examTableBody.innerHTML = "";
   upcomingTableBody.innerHTML = "";
+  simTableBody.innerHTML = "";
 
   exams.forEach((exam) => {
     const tr = document.createElement("tr");
@@ -970,6 +1012,7 @@ function render() {
   homeShowCompletedBtn.classList.toggle("active", state.homeExamFilter === "completed");
 
   const gpa = weightedGpa(exams);
+  const simGpa = simulatedGpa(exams, simulatedExams);
   const acquired = exams
     .filter((e) => e.status === "Completed")
     .reduce((acc, e) => acc + e.credits, 0);
@@ -1014,6 +1057,21 @@ function render() {
   renderCalendar(exams);
   renderStudyPlan();
   renderHomeStudyPlan();
+
+  simulatorResultEl.textContent = simulatedExams.length
+    ? t("manage.simCurrentVsSim", { current: gpa.toFixed(2), simulated: simGpa.toFixed(2) })
+    : t("manage.simCurrentOnly", { current: gpa.toFixed(2) });
+
+  simulatedExams.forEach((exam) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${exam.subject}</td>
+      <td>${exam.credits}</td>
+      <td>${exam.plannedGrade}</td>
+      <td><button class="danger" data-sim-id="${exam.id}" type="button">${t("study.deleteBtn")}</button></td>
+    `;
+    simTableBody.appendChild(tr);
+  });
 }
 
 examForm.addEventListener("submit", async (event) => {
@@ -1243,6 +1301,7 @@ authLoginForm.addEventListener("submit", async (event) => {
     authLoginForm.reset();
     await loadAppData();
     showAppView();
+    scheduleTrendChartDraw();
   } catch (error) {
     showAuthView(error.message);
   }
@@ -1260,6 +1319,7 @@ authRegisterForm.addEventListener("submit", async (event) => {
     authRegisterForm.reset();
     await loadAppData();
     showAppView();
+    scheduleTrendChartDraw();
   } catch (error) {
     showAuthView(error.message);
   }
@@ -1285,33 +1345,54 @@ tabButtons.forEach((button) => {
     tabContents.forEach((content) => content.classList.remove("active"));
     button.classList.add("active");
     document.getElementById(`${selectedTab}-tab`).classList.add("active");
+    if (selectedTab === "home") {
+      scheduleTrendChartDraw();
+    }
   });
 });
 
-simulatorForm.addEventListener("submit", (event) => {
+simulatorForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const targetGpa = Number(document.getElementById("target-gpa").value);
-  const nextCredits = Number(document.getElementById("next-credits").value);
-  const exams = getExams();
-
-  if (!Number.isFinite(targetGpa) || !Number.isFinite(nextCredits) || nextCredits <= 0) {
+  const subject = document.getElementById("sim-subject").value.trim();
+  const credits = Number(document.getElementById("sim-credits").value);
+  const plannedGrade = Number(document.getElementById("sim-grade").value);
+  if (!subject || !Number.isFinite(credits) || credits <= 0 || !Number.isFinite(plannedGrade)) {
     return;
   }
+  try {
+    const created = await apiRequest("/api/simulated-exams", {
+      method: "POST",
+      body: JSON.stringify({ subject, credits, plannedGrade })
+    });
+    saveSimulatedExams([created, ...getSimulatedExams()]);
+    simulatorForm.reset();
+    render();
+  } catch (error) {
+    alert(error.message);
+  }
+});
 
-  const completed = exams.filter(
-    (e) => e.status === "Completed" && Number.isFinite(e.grade)
-  );
-  const weighted = completed.reduce((acc, e) => acc + e.grade * e.credits, 0);
-  const credits = completed.reduce((acc, e) => acc + e.credits, 0);
+simTableBody.addEventListener("click", async (event) => {
+  const target = event.target;
+  if (target.tagName !== "BUTTON") return;
+  const id = Number(target.dataset.simId);
+  if (!Number.isFinite(id)) return;
+  try {
+    await apiRequest(`/api/simulated-exams/${id}`, { method: "DELETE" });
+    saveSimulatedExams(getSimulatedExams().filter((item) => item.id !== id));
+    render();
+  } catch (error) {
+    alert(error.message);
+  }
+});
 
-  const required = (targetGpa * (credits + nextCredits) - weighted) / nextCredits;
-
-  if (required > 31) {
-    simulatorResultEl.textContent = t("manage.simTooHigh");
-  } else if (required < 18) {
-    simulatorResultEl.textContent = t("manage.simAlreadyThere");
-  } else {
-    simulatorResultEl.textContent = t("manage.simNeed", { grade: required.toFixed(2) });
+clearSimBtn.addEventListener("click", async () => {
+  try {
+    await apiRequest("/api/simulated-exams", { method: "DELETE" });
+    saveSimulatedExams([]);
+    render();
+  } catch (error) {
+    alert(error.message);
   }
 });
 
@@ -1327,6 +1408,10 @@ async function loadAppData() {
     ...session,
     day: normalizeStudyDay(session.day),
     description: session.description || ""
+  }));
+  state.simulatedExams = (data.simulatedExams || []).map((exam) => ({
+    ...exam,
+    plannedGrade: Number(exam.plannedGrade)
   }));
   state.targetGpa = Number.isFinite(data.targetGpa) ? data.targetGpa : 0;
   state.profile = data.profile ? { ...DEFAULT_PROFILE, ...data.profile } : { ...DEFAULT_PROFILE };
@@ -1348,6 +1433,7 @@ async function initializeApp() {
     await apiRequest("/api/auth/me");
     await loadAppData();
     showAppView();
+    scheduleTrendChartDraw();
   } catch {
     showAuthView();
     setAuthMode("login");
@@ -1357,5 +1443,5 @@ async function initializeApp() {
 initializeApp();
 window.addEventListener("resize", () => {
   setDeviceMode();
-  drawTrendChart(getExams(), getTargetGpa(), state.profile.graduationTarget);
+  scheduleTrendChartDraw();
 });

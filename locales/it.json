@@ -90,6 +90,10 @@
     "targetGpa": "Media obiettivo",
     "nextCfu": "CFU prossimo esame",
     "calcBtn": "Calcola voto richiesto",
+    "simAddBtn": "Aggiungi esame simulato",
+    "simClear": "Svuota simulazione",
+    "simCurrentOnly": "Media attuale: {{current}}. Aggiungi esami simulati per vedere la media stimata.",
+    "simCurrentVsSim": "Media attuale: {{current}} -> Media simulata: {{simulated}}",
     "simNeed": "Voto richiesto al prossimo esame: {{grade}}",
     "simTooHigh": "Obiettivo irrealistico con questo solo esame (voto richiesto > 31).",
     "simAlreadyThere": "Sei già sopra obiettivo: basta prendere sufficiente."

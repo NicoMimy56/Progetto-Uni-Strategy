@@ -167,16 +167,32 @@
             <h2 data-i18n="manage.simulator">Simulatore</h2>
             <form id="simulator-form" class="form-grid">
               <label>
-                <span data-i18n="manage.targetGpa">Media obiettivo</span>
-                <input type="number" id="target-gpa" min="18" max="31" step="0.01" required />
+                <span data-i18n="manage.subject">Materia</span>
+                <input type="text" id="sim-subject" required />
               </label>
               <label>
                 <span data-i18n="manage.nextCfu">CFU prossimo esame</span>
-                <input type="number" id="next-credits" min="1" required />
+                <input type="number" id="sim-credits" min="1" required />
               </label>
-              <button type="submit" data-i18n="manage.calcBtn">Calcola</button>
+              <label>
+                <span data-i18n="manage.grade">Voto (18-31)</span>
+                <input type="number" id="sim-grade" min="18" max="31" required />
+              </label>
+              <button type="submit" data-i18n="manage.simAddBtn">Aggiungi esame simulato</button>
             </form>
             <p id="simulator-result" class="simulator-result"></p>
+            <table>
+              <thead>
+                <tr>
+                  <th data-i18n="tableSubject">Materia</th>
+                  <th data-i18n="tableCfu">CFU</th>
+                  <th data-i18n="tableGrade">Voto</th>
+                  <th data-i18n="tableAction">Azione</th>
+                </tr>
+              </thead>
+              <tbody id="sim-table-body"></tbody>
+            </table>
+            <button id="clear-sim-btn" class="ghost-btn" type="button" data-i18n="manage.simClear">Svuota simulazione</button>
           </section>
 
           <section class="card full-width">
@@ -387,6 +403,6 @@
     <script src="/vendor/i18next/i18next.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
-    <script src="./app.js?v=2026-05-06-6"></script>
+    <script src="./app.js?v=2026-05-06-7"></script>
   </body>
 </html>

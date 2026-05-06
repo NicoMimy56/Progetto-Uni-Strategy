@@ -90,6 +90,10 @@
     "targetGpa": "Target GPA",
     "nextCfu": "Next exam CFU",
     "calcBtn": "Calculate required grade",
+    "simAddBtn": "Add simulated exam",
+    "simClear": "Clear simulation",
+    "simCurrentOnly": "Current GPA: {{current}}. Add simulated exams to preview the new average.",
+    "simCurrentVsSim": "Current GPA: {{current}} -> Simulated GPA: {{simulated}}",
     "simNeed": "Required grade on next exam: {{grade}}",
     "simTooHigh": "Not realistic with this exam alone (required grade > 31).",
     "simAlreadyThere": "Already above target: passing grade is enough."

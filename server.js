@@ -63,6 +63,16 @@ db.exec(`
     PRIMARY KEY(user_id, key),
     FOREIGN KEY(user_id) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS simulated_exams (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    subject TEXT NOT NULL,
+    credits INTEGER NOT NULL,
+    planned_grade REAL NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+  );
 `);
 
 function hasColumn(tableName, columnName) {
@@ -180,6 +190,15 @@ function toStudyRow(row) {
   };
 }
 
+function toSimulatedExamRow(row) {
+  return {
+    id: row.id,
+    subject: row.subject,
+    credits: row.credits,
+    plannedGrade: row.planned_grade
+  };
+}
+
 app.post("/api/auth/register", (req, res) => {
   const email = String(req.body.email || "").trim().toLowerCase();
   const password = String(req.body.password || "");
@@ -247,6 +266,10 @@ app.get("/api/bootstrap", requireAuth, (req, res) => {
     .prepare("SELECT * FROM study_sessions WHERE user_id = ? ORDER BY day, start_time")
     .all(req.user.id)
     .map(toStudyRow);
+  const simulatedExams = db
+    .prepare("SELECT * FROM simulated_exams WHERE user_id = ? ORDER BY id DESC")
+    .all(req.user.id)
+    .map(toSimulatedExamRow);
   const targetRow = db
     .prepare("SELECT value FROM user_settings WHERE user_id = ? AND key = 'target_gpa'")
     .get(req.user.id);
@@ -263,7 +286,14 @@ app.get("/api/bootstrap", requireAuth, (req, res) => {
     }
   }
 
-  return res.json({ exams, studyPlan, targetGpa, profile, user: { email: req.user.email } });
+  return res.json({
+    exams,
+    studyPlan,
+    simulatedExams,
+    targetGpa,
+    profile,
+    user: { email: req.user.email }
+  });
 });
 
 app.post("/api/exams", requireAuth, (req, res) => {
@@ -334,6 +364,42 @@ app.delete("/api/study-sessions/:id", requireAuth, (req, res) => {
 
 app.delete("/api/study-sessions", requireAuth, (req, res) => {
   db.prepare("DELETE FROM study_sessions WHERE user_id = ?").run(req.user.id);
+  return res.status(204).send();
+});
+
+app.post("/api/simulated-exams", requireAuth, (req, res) => {
+  const subject = String(req.body.subject || "").trim();
+  const credits = Number(req.body.credits);
+  const plannedGrade = Number(req.body.plannedGrade);
+  if (!subject || !Number.isFinite(credits) || credits <= 0) {
+    return res.status(400).json({ error: "Invalid simulated exam subject/credits." });
+  }
+  if (!Number.isFinite(plannedGrade) || plannedGrade < 18 || plannedGrade > 31) {
+    return res.status(400).json({ error: "Simulated grade must be between 18 and 31." });
+  }
+  const result = db
+    .prepare(
+      `INSERT INTO simulated_exams (user_id, subject, credits, planned_grade)
+       VALUES (?, ?, ?, ?)`
+    )
+    .run(req.user.id, subject, credits, plannedGrade);
+  const inserted = db
+    .prepare("SELECT * FROM simulated_exams WHERE id = ? AND user_id = ?")
+    .get(result.lastInsertRowid, req.user.id);
+  return res.status(201).json(toSimulatedExamRow(inserted));
+});
+
+app.delete("/api/simulated-exams/:id", requireAuth, (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    return res.status(400).json({ error: "Invalid simulated exam id." });
+  }
+  db.prepare("DELETE FROM simulated_exams WHERE id = ? AND user_id = ?").run(id, req.user.id);
+  return res.status(204).send();
+});
+
+app.delete("/api/simulated-exams", requireAuth, (req, res) => {
+  db.prepare("DELETE FROM simulated_exams WHERE user_id = ?").run(req.user.id);
   return res.status(204).send();
 });
 
