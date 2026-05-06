@@ -5,7 +5,20 @@
     "manage": "Examenes",
     "calendar": "Calendario",
     "study": "Plan de estudio",
+    "requests": "Peticiones",
     "settings": "Configuracion"
+  },
+  "requests": {
+    "pageTitle": "Peticiones de funciones",
+    "pageHint": "Prop mejoras. La peticion queda guardada; con SMTP el buzon del proyecto recibe un correo y puede responderte via Reply-To.",
+    "subjectLabel": "Asunto",
+    "subjectPh": "Titulo breve",
+    "messageLabel": "Descripcion",
+    "messagePh": "Contexto, prioridad…",
+    "submit": "Enviar",
+    "validation": "Rellena asunto y descripcion.",
+    "successEmailed": "Enviado. Gracias!",
+    "successQueued": "Guardado en el servidor. Email aun no configurado."
   },
   "settings": {
     "pageTitle": "Configuracion",

@@ -5,7 +5,20 @@
     "manage": "Prufungen",
     "calendar": "Kalender",
     "study": "Studienplan",
+    "requests": "Wuensche",
     "settings": "Einstellungen"
+  },
+  "requests": {
+    "pageTitle": "Implementierungswuensche",
+    "pageHint": "Schlag eine neue Funktion vor. Der Eintrag wird gespeichert; bei konfiguriertem SMTP geht eine Mail an das Projekt-Postfach, Antwort direkt an deine Login-E-Mail.",
+    "subjectLabel": "Betreff",
+    "subjectPh": "Kurztitel",
+    "messageLabel": "Beschreibung",
+    "messagePh": "Kontext, Nutzung, Prioritaet …",
+    "submit": "Senden",
+    "validation": "Bitte Betreff und Text ausfuellen.",
+    "successEmailed": "Gesendet. Danke!",
+    "successQueued": "Gespeichert. SMTP ist noch nicht eingerichtet."
   },
   "settings": {
     "pageTitle": "Einstellungen",

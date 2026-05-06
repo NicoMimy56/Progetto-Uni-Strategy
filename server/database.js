@@ -32,6 +32,7 @@ db.pragma("journal_mode = WAL");
  * - **settings**: KV globale (poco usato nel flusso attuale).
  * - **user_settings**: KV per utente; chiavi note `target_gpa` (stringa numerica) e `profile` (JSON stringificato).
  * - **simulated_exams**: righe del simulatore media (non copiano la tabella exams).
+ * - **feature_requests**: richieste di implementazione dal tab Richieste; `email_sent` indica se l’SMTP ha accettato l’invio.
  */
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
@@ -91,6 +92,18 @@ db.exec(`
     subject TEXT NOT NULL,
     credits INTEGER NOT NULL,
     planned_grade REAL NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+  );
+
+  -- Richieste inviate da utenti autenticati (POST /api/feature-requests); email opzionale via nodemailer
+  CREATE TABLE IF NOT EXISTS feature_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    user_email TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    message TEXT NOT NULL,
+    email_sent INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(user_id) REFERENCES users(id)
   );

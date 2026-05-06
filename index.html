@@ -59,6 +59,7 @@
         <button type="button" class="tab-btn" data-tab="manage" data-i18n="tabs.manage">Gestione Esami</button>
         <button type="button" class="tab-btn" data-tab="calendar" data-i18n="tabs.calendar">Calendario</button>
         <button type="button" class="tab-btn" data-tab="study" data-i18n="tabs.study">Piano Studio</button>
+        <button type="button" class="tab-btn" data-tab="requests" data-i18n="tabs.requests">Richieste</button>
         <button type="button" class="tab-btn" data-tab="settings" data-i18n="tabs.settings">Impostazioni</button>
       </nav>
 
@@ -292,6 +293,41 @@
               <button id="clear-study-btn" class="delete-btn" type="button" data-i18n="study.clearPlan">Svuota piano</button>
             </div>
             <div id="study-board" class="study-board"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="requests-tab" class="tab-content">
+        <div class="layout">
+          <section class="card full-width">
+            <h2 data-i18n="requests.pageTitle">Richieste di implementazione</h2>
+            <p class="trend-helper-message" data-i18n="requests.pageHint"></p>
+            <form id="feature-request-form" class="form-grid">
+              <label>
+                <span data-i18n="requests.subjectLabel">Oggetto</span>
+                <input
+                  type="text"
+                  id="feature-request-subject"
+                  maxlength="200"
+                  required
+                  data-i18n-placeholder="requests.subjectPh"
+                  placeholder=""
+                />
+              </label>
+              <label>
+                <span data-i18n="requests.messageLabel">Descrizione</span>
+                <textarea
+                  id="feature-request-message"
+                  rows="6"
+                  maxlength="8000"
+                  required
+                  data-i18n-placeholder="requests.messagePh"
+                  placeholder=""
+                ></textarea>
+              </label>
+              <button type="submit" data-i18n="requests.submit">Invia richiesta</button>
+            </form>
+            <p id="feature-request-status" class="feature-request-status" aria-live="polite"></p>
           </section>
         </div>
       </section>

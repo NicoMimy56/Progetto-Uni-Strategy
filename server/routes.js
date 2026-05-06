@@ -27,6 +27,7 @@
  * | DELETE | /api/simulated-exams   | sì  |
  * | PUT    | /api/settings/target-gpa | sì |
  * | PUT    | /api/settings/profile | sì  |
+ * | POST   | /api/feature-requests | sì  |
  *
  * In coda: `app.use("/api", ...)` → 404 JSON per path API errati (non HTML).
  */
@@ -40,6 +41,7 @@ const {
   requireAuth
 } = require("./auth");
 const { toExamRow, toStudyRow, toSimulatedExamRow } = require("./mappers");
+const { sendFeatureRequestMail } = require("./featureRequestMail");
 
 /**
  * Registra tutte le route sull'istanza Express passata dall'esterno.
@@ -312,6 +314,50 @@ function registerApiRoutes(app) {
       .prepare("SELECT * FROM simulated_exams WHERE id = ? AND user_id = ?")
       .get(result.lastInsertRowid, req.user.id);
     return res.status(201).json(toSimulatedExamRow(inserted));
+  });
+
+  /* ---------------------------------------------------------------------------
+   * POST /api/feature-requests — richieste di implementazione / feedback.
+   * Auth: `requireAuth`. Body: `{ subject, message }` (trim, max 200 / 8000 caratteri).
+   * Salva sempre in `feature_requests`; poi tenta `sendFeatureRequestMail` (vedi `featureRequestMail.js`).
+   * Risposta 201: `{ ok: true, id, emailed }` — `emailed` false se manca SMTP o l’invio fallisce (riga resta in DB).
+   * --------------------------------------------------------------------------- */
+  app.post("/api/feature-requests", requireAuth, async (req, res) => {
+    const subject = String(req.body.subject || "").trim();
+    const message = String(req.body.message || "").trim();
+    if (!subject || !message) {
+      return res.status(400).json({ error: "Subject and message are required." });
+    }
+    if (subject.length > 200 || message.length > 8000) {
+      return res.status(400).json({ error: "Request too long." });
+    }
+
+    const userEmail = req.user.email || "";
+
+    const result = db
+      .prepare(
+        `INSERT INTO feature_requests (user_id, user_email, subject, message)
+         VALUES (?, ?, ?, ?)`
+      )
+      .run(req.user.id, userEmail, subject, message);
+
+    const id = Number(result.lastInsertRowid);
+    let emailed = false;
+
+    try {
+      emailed = await sendFeatureRequestMail({
+        userEmail,
+        subjectLine: subject,
+        body: message
+      });
+      if (emailed) {
+        db.prepare(`UPDATE feature_requests SET email_sent = 1 WHERE id = ?`).run(id);
+      }
+    } catch (err) {
+      console.error("[feature-requests] email error:", err && err.message);
+    }
+
+    return res.status(201).json({ ok: true, id, emailed });
   });
 
   app.delete("/api/simulated-exams/:id", requireAuth, (req, res) => {

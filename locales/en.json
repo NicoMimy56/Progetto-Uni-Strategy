@@ -5,7 +5,20 @@
     "manage": "Exams",
     "calendar": "Calendar",
     "study": "Study plan",
+    "requests": "Requests",
     "settings": "Settings"
+  },
+  "requests": {
+    "pageTitle": "Feature requests",
+    "pageHint": "Suggest a feature or improvement. Your request is stored; if SMTP is configured on the server, the project mailbox receives an email and can reply to you directly (Reply-To: your account email).",
+    "subjectLabel": "Subject",
+    "subjectPh": "Short title for your request",
+    "messageLabel": "Details",
+    "messagePh": "Context, use cases, priority, UI ideas…",
+    "submit": "Send request",
+    "validation": "Please fill in both subject and details.",
+    "successEmailed": "Request sent. Thank you!",
+    "successQueued": "Request saved on the server. Email is not configured yet; requests are kept in the database."
   },
   "settings": {
     "pageTitle": "Settings",

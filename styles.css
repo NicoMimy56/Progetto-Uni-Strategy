@@ -122,7 +122,7 @@ main {
   right: 0;
   z-index: 50;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 0;
   padding: 0.45rem;
   background: var(--primary-dark);
@@ -432,6 +432,14 @@ button {
   font-size: 0.88rem;
 }
 
+/* Messaggio sotto il form tab Richieste (validazione / esito invio) */
+.feature-request-status {
+  margin: 0.75rem 0 0;
+  min-height: 1.35em;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
 .table-head {
   display: flex;
   justify-content: space-between;
@@ -631,7 +639,7 @@ body.device-desktop .tabs {
   position: sticky;
   top: 0;
   bottom: auto;
-  grid-template-columns: repeat(5, max-content);
+  grid-template-columns: repeat(6, max-content);
   justify-content: center;
   gap: 0.6rem;
   background: #fff;

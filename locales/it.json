@@ -5,7 +5,20 @@
     "manage": "Gestione Esami",
     "calendar": "Calendario",
     "study": "Piano Studio",
+    "requests": "Richieste",
     "settings": "Impostazioni"
+  },
+  "requests": {
+    "pageTitle": "Richieste di implementazione",
+    "pageHint": "Descrivi una funzionalità o un miglioramento che vorresti in Uni-Strategy. La richiesta viene salvata; se il server ha una casella email configurata (SMTP), riceverà anche un messaggio con possibilità di risponderti direttamente (Reply-To: la tua email di account).",
+    "subjectLabel": "Oggetto",
+    "subjectPh": "Breve titolo della richiesta",
+    "messageLabel": "Descrizione",
+    "messagePh": "Contesto, esempi d’uso, priorità, idee di interfaccia…",
+    "submit": "Invia richiesta",
+    "validation": "Compila sia l’oggetto sia la descrizione.",
+    "successEmailed": "Richiesta inviata. Grazie!",
+    "successQueued": "Richiesta registrata sul server. L’invio email non è ancora configurato: controlla comunque il database o configura SMTP."
   },
   "settings": {
     "pageTitle": "Impostazioni",

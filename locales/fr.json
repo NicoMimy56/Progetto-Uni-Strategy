@@ -5,7 +5,20 @@
     "manage": "Examens",
     "calendar": "Calendrier",
     "study": "Plan d'etude",
+    "requests": "Demandes",
     "settings": "Parametres"
+  },
+  "requests": {
+    "pageTitle": "Demandes de fonctionnalites",
+    "pageHint": "Propose une amelioration. La demande est enregistree; si SMTP est configure, une copie arrive sur la messagerie du projet avec reponse facile vers ton email.",
+    "subjectLabel": "Objet",
+    "subjectPh": "Titre court",
+    "messageLabel": "Description",
+    "messagePh": "Contexte, priorite, exemples…",
+    "submit": "Envoyer",
+    "validation": "Remplis objet et description.",
+    "successEmailed": "Demande envoyee. Merci !",
+    "successQueued": "Demande enregistree. Email non configure sur le serveur."
   },
   "settings": {
     "pageTitle": "Parametres",

@@ -88,3 +88,9 @@ export const authRegisterTabBtn = document.getElementById("auth-register-tab");
 export const authLoginForm = document.getElementById("auth-login-form");
 export const authRegisterForm = document.getElementById("auth-register-form");
 export const logoutBtn = document.getElementById("logout-btn");
+
+/* Tab Richieste / feature request → POST /api/feature-requests */
+export const featureRequestForm = document.getElementById("feature-request-form");
+export const featureRequestSubject = document.getElementById("feature-request-subject");
+export const featureRequestMessage = document.getElementById("feature-request-message");
+export const featureRequestStatusEl = document.getElementById("feature-request-status");

@@ -80,7 +80,11 @@ import {
   authRegisterTabBtn,
   authLoginForm,
   authRegisterForm,
-  logoutBtn
+  logoutBtn,
+  featureRequestForm,
+  featureRequestSubject,
+  featureRequestMessage,
+  featureRequestStatusEl
 } from "./dom.js";
 import { apiRequest } from "./api.js";
 import { weightedGpa, simulatedGpa, daysRemaining } from "./academic.js";
@@ -1569,6 +1573,31 @@ clearSimBtn.addEventListener("click", async () => {
     render();
   } catch (error) {
     alert(error.message);
+  }
+});
+
+/** Richieste di implementazione → DB + tentativo SMTP (variabili d’ambiente sul server). */
+featureRequestForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const subject = featureRequestSubject?.value.trim() ?? "";
+  const message = featureRequestMessage?.value.trim() ?? "";
+  if (!subject || !message) {
+    if (featureRequestStatusEl) featureRequestStatusEl.textContent = t("requests.validation");
+    return;
+  }
+  if (featureRequestStatusEl) featureRequestStatusEl.textContent = "";
+  try {
+    const data = await apiRequest("/api/feature-requests", {
+      method: "POST",
+      body: JSON.stringify({ subject, message })
+    });
+    featureRequestForm?.reset();
+    if (featureRequestStatusEl) {
+      featureRequestStatusEl.textContent = data.emailed ? t("requests.successEmailed") : t("requests.successQueued");
+    }
+  } catch (error) {
+    alert(error.message);
+    if (featureRequestStatusEl) featureRequestStatusEl.textContent = "";
   }
 });
 

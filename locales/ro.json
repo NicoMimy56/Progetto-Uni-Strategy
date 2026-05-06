@@ -5,7 +5,20 @@
     "manage": "Examene",
     "calendar": "Calendar",
     "study": "Plan de studiu",
+    "requests": "Cereri",
     "settings": "Setari"
+  },
+  "requests": {
+    "pageTitle": "Cereri de implementare",
+    "pageHint": "Descrie o functie dorita. Cererea este salvata; cu SMTP configurat primesti copie pe mailul proiectului cu Reply-To catre contul tau.",
+    "subjectLabel": "Subiect",
+    "subjectPh": "Titlu scurt",
+    "messageLabel": "Descriere",
+    "messagePh": "Context, prioritate …",
+    "submit": "Trimite",
+    "validation": "Completeaza subiectul si descrierea.",
+    "successEmailed": "Trimis. Multumim!",
+    "successQueued": "Salvat. Email-ul nu este configurat pe server."
   },
   "settings": {
     "pageTitle": "Setari",
