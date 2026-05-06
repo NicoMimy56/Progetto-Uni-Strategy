@@ -1,6 +1,15 @@
 const WEEK_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const CALENDAR_WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const APP_I18N_VERSION = "2026-05-05-4";
+const APP_I18N_VERSION = "2026-05-06-5";
+const SUPPORTED_LANGUAGES = ["it", "en", "fr", "de", "ro", "es"];
+const CALENDAR_LOCALES = {
+  it: "it-IT",
+  en: "en-GB",
+  fr: "fr-FR",
+  de: "de-DE",
+  ro: "ro-RO",
+  es: "es-ES"
+};
 
 const examForm = document.getElementById("exam-form");
 const simulatorForm = document.getElementById("simulator-form");
@@ -41,43 +50,62 @@ const settingsTabEl = document.getElementById("settings-tab");
 const totalCfuInput = document.getElementById("total-cfu-input");
 const graduationTargetInput = document.getElementById("graduation-target-input");
 const saveSettingsBtn = document.getElementById("save-settings-btn");
+const settingsSavedToastEl = document.getElementById("settings-saved-toast");
 
 const THEME_PRESETS = {
   classic: {
-    primary: "#1d4ed8",
-    primaryDark: "#0f2f6f",
-    background: "#eef2f7",
+    primary: "#8b5cf6",
+    primaryDark: "#4c1d95",
+    background: "#f6f3ff",
     card: "#ffffff",
-    text: "#10233e",
-    muted: "#5a6c83",
-    border: "#d9e1eb"
+    text: "#2b1f45",
+    muted: "#6f6291",
+    border: "#e3dafc"
   },
   forest: {
-    primary: "#166534",
-    primaryDark: "#0b3a24",
-    background: "#edf7f0",
+    primary: "#1f6d45",
+    primaryDark: "#13412c",
+    background: "#eef6f1",
     card: "#ffffff",
-    text: "#133424",
-    muted: "#4f6e60",
-    border: "#c5ddcc"
+    text: "#173629",
+    muted: "#51695d",
+    border: "#c9ddd0"
   },
   sunset: {
-    primary: "#c2410c",
-    primaryDark: "#7c2d12",
-    background: "#fff5ee",
+    primary: "#b4533a",
+    primaryDark: "#6d3a2f",
+    background: "#f8f2eb",
     card: "#ffffff",
-    text: "#3b1f12",
-    muted: "#7f6053",
-    border: "#f0d8c8"
+    text: "#3f2b24",
+    muted: "#7c655c",
+    border: "#e6d5c9"
   },
   dark: {
-    primary: "#a5b4fc",
-    primaryDark: "#0c0c0f",
-    background: "#09090b",
-    card: "#18181b",
-    text: "#fafafa",
-    muted: "#a1a1aa",
-    border: "#27272a"
+    primary: "#8b9cff",
+    primaryDark: "#0b0d14",
+    background: "#0f1117",
+    card: "#181c25",
+    text: "#dbe4f2",
+    muted: "#97a3b7",
+    border: "#2c3444"
+  },
+  night: {
+    primary: "#b08900",
+    primaryDark: "#6c4d0a",
+    background: "#f5f1e6",
+    card: "#fffaf0",
+    text: "#2e2a24",
+    muted: "#6a6256",
+    border: "#e2d8c4"
+  },
+  sky: {
+    primary: "#5b9df5",
+    primaryDark: "#2c5fa9",
+    background: "#f0f9ff",
+    card: "#ffffff",
+    text: "#0f2942",
+    muted: "#5f7690",
+    border: "#d3e6f6"
   }
 };
 const DEFAULT_PROFILE = {
@@ -103,6 +131,7 @@ const studyTimePickerState = {
   minuteHand: null,
   valueLabel: null
 };
+let settingsToastTimer = null;
 
 function applyTheme(theme) {
   const root = document.documentElement;
@@ -145,20 +174,25 @@ function syncProfileInputs() {
 }
 
 let i18nReady = false;
-let translationResources = { it: {}, en: {} };
+let translationResources = {};
 
 async function initI18n(language) {
-  const [it, en] = await Promise.all([
-    fetch(`/locales/it.json?v=${APP_I18N_VERSION}`).then((res) => res.json()),
-    fetch(`/locales/en.json?v=${APP_I18N_VERSION}`).then((res) => res.json())
-  ]);
-  translationResources = { it, en };
+  const resources = {};
+  await Promise.all(
+    SUPPORTED_LANGUAGES.map(async (lng) => {
+      const res = await fetch(`/locales/${lng}.json?v=${APP_I18N_VERSION}`);
+      if (!res.ok) return;
+      resources[lng] = await res.json();
+    })
+  );
+  translationResources = resources;
   await i18next.init({
     lng: language,
     fallbackLng: "it",
     resources: {
-      it: { translation: it },
-      en: { translation: en }
+      ...Object.fromEntries(
+        Object.entries(resources).map(([lng, json]) => [lng, { translation: json }])
+      )
     },
     keySeparator: ".",
     ignoreJSONStructure: false,
@@ -182,33 +216,11 @@ function t(key, options) {
 }
 
 function getLocalizedDay(day) {
-  const lang = state.profile.language || "it";
-  const map = {
-    it: {
-      Monday: "Lunedì",
-      Tuesday: "Martedì",
-      Wednesday: "Mercoledì",
-      Thursday: "Giovedì",
-      Friday: "Venerdì",
-      Saturday: "Sabato",
-      Sunday: "Domenica"
-    },
-    en: {
-      Monday: "Monday",
-      Tuesday: "Tuesday",
-      Wednesday: "Wednesday",
-      Thursday: "Thursday",
-      Friday: "Friday",
-      Saturday: "Saturday",
-      Sunday: "Sunday"
-    }
-  };
-  return map[lang]?.[day] || t(`days.${day}`);
+  return t(`days.${day}`);
 }
 
 function getNoSessionLabel() {
-  const lang = state.profile.language || "it";
-  return lang === "it" ? "Nessuna sessione." : "No sessions.";
+  return t("study.noSession");
 }
 
 async function translateStaticUi() {
@@ -460,6 +472,18 @@ function setupDateTimePickers() {
     });
   }
   setupStudyTimePicker();
+}
+
+function showSettingsSavedToast() {
+  if (!settingsSavedToastEl) return;
+  settingsSavedToastEl.textContent = t("settings.saved");
+  settingsSavedToastEl.classList.add("show");
+  if (settingsToastTimer) {
+    clearTimeout(settingsToastTimer);
+  }
+  settingsToastTimer = setTimeout(() => {
+    settingsSavedToastEl.classList.remove("show");
+  }, 2200);
 }
 
 async function apiRequest(path, options = {}) {
@@ -725,7 +749,7 @@ function drawTrendChart(exams, targetGpa, graduationTarget) {
 function renderCalendar(exams) {
   const year = currentCalendarDate.getFullYear();
   const month = currentCalendarDate.getMonth();
-  const localeTag = state.profile.language === "en" ? "en-GB" : "it-IT";
+  const localeTag = CALENDAR_LOCALES[state.profile.language] || "it-IT";
   const monthName = currentCalendarDate.toLocaleDateString(localeTag, { month: "long", year: "numeric" });
   calendarTitleEl.textContent = monthName;
   calendarGridEl.innerHTML = "";
@@ -1169,6 +1193,7 @@ saveSettingsBtn.addEventListener("click", async () => {
     applyTheme(getCurrentTheme());
     await translateStaticUi();
     render();
+    showSettingsSavedToast();
   } catch (error) {
     alert(error.message);
   }
@@ -1227,7 +1252,7 @@ async function initializeApp() {
     }));
     state.targetGpa = Number.isFinite(data.targetGpa) ? data.targetGpa : 0;
     state.profile = data.profile ? { ...DEFAULT_PROFILE, ...data.profile } : { ...DEFAULT_PROFILE };
-    if (!["it", "en"].includes(state.profile.language)) {
+    if (!SUPPORTED_LANGUAGES.includes(state.profile.language)) {
       state.profile.language = DEFAULT_PROFILE.language;
     }
     await initI18n(state.profile.language);

@@ -574,7 +574,7 @@ body.device-desktop td {
 }
 
 .settings-tiles-theme {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 @media (max-width: 520px) {
@@ -584,7 +584,7 @@ body.device-desktop td {
 }
 
 .settings-tiles-lang {
-  grid-template-columns: repeat(2, minmax(0, 72px));
+  grid-template-columns: repeat(3, minmax(0, 72px));
   justify-content: start;
 }
 
@@ -651,19 +651,69 @@ body.device-desktop td {
 }
 
 .swatch-classic {
-  background: linear-gradient(135deg, #1d4ed8 0%, #1d4ed8 38%, #eef2f7 38%, #eef2f7 72%, #fff 72%);
+  background: linear-gradient(
+    132deg,
+    #8b5cf6 0%,
+    #8b5cf6 31%,
+    #b49af8 39%,
+    #efe8ff 63%,
+    #ffffff 100%
+  );
 }
 
 .swatch-forest {
-  background: linear-gradient(135deg, #166534 0%, #166534 40%, #edf7f0 40%, #edf7f0 72%, #fff 72%);
+  background: linear-gradient(
+    132deg,
+    #1f6d45 0%,
+    #1f6d45 32%,
+    #6fa58a 41%,
+    #d9eee2 64%,
+    #ffffff 100%
+  );
 }
 
 .swatch-sunset {
-  background: linear-gradient(135deg, #c2410c 0%, #c2410c 38%, #fff5ee 38%, #fff5ee 72%, #fff 72%);
+  background: linear-gradient(
+    132deg,
+    #b4533a 0%,
+    #b4533a 31%,
+    #cd8873 40%,
+    #f2dfd3 63%,
+    #ffffff 100%
+  );
 }
 
 .swatch-dark {
-  background: linear-gradient(135deg, #818cf8 0%, #18181b 45%, #27272a 45%, #27272a 75%, #fafafa 75%);
+  background: linear-gradient(
+    132deg,
+    #8b9cff 0%,
+    #2f3750 30%,
+    #181c25 58%,
+    #2c3444 78%,
+    #e2e8f0 100%
+  );
+}
+
+.swatch-night {
+  background: linear-gradient(
+    132deg,
+    #b08900 0%,
+    #b08900 32%,
+    #d0b45d 41%,
+    #eee4d0 64%,
+    #fffaf0 100%
+  );
+}
+
+.swatch-sky {
+  background: linear-gradient(
+    132deg,
+    #5b9df5 0%,
+    #5b9df5 31%,
+    #9bc2f8 39%,
+    #dff0ff 63%,
+    #ffffff 100%
+  );
 }
 
 .settings-tile-lang {
@@ -735,6 +785,24 @@ html.theme-dark body.device-desktop .tabs {
 html.theme-dark body.device-desktop .tab-btn {
   background: #27272a;
   color: #e4e4e7;
+}
+
+html.theme-dark body {
+  background: #020204;
+}
+
+html.theme-dark body.device-desktop {
+  background: #020204;
+}
+
+html.theme-dark .card {
+  background: #0a0a0d;
+  border-color: #18181b;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+}
+
+html.theme-dark body.device-desktop .layout {
+  background: transparent;
 }
 
 .study-time-popover {
@@ -860,4 +928,33 @@ html.theme-dark .study-time-popover {
 
 html.theme-dark .study-time-clock {
   background: linear-gradient(160deg, rgba(165, 180, 252, 0.2), rgba(63, 63, 70, 0.2));
+}
+
+.settings-saved-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translate(-50%, 12px);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1400;
+  padding: 0.65rem 0.95rem;
+  border-radius: 12px;
+  background: rgba(15, 47, 111, 0.95);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 0.86rem;
+  font-weight: 700;
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.settings-saved-toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+html.theme-dark .settings-saved-toast {
+  background: rgba(79, 70, 229, 0.92);
+  border-color: rgba(199, 210, 254, 0.36);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
 }

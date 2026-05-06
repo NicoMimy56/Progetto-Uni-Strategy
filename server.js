@@ -181,8 +181,8 @@ app.put("/api/settings/profile", (req, res) => {
   if (!profile || typeof profile !== "object") {
     return res.status(400).json({ error: "Invalid profile payload." });
   }
-  const allowedLanguages = ["it", "en"];
-  const allowedThemePresets = ["classic", "forest", "sunset", "dark"];
+  const allowedLanguages = ["it", "en", "fr", "de", "ro", "es"];
+  const allowedThemePresets = ["classic", "forest", "sunset", "dark", "night", "sky"];
   const allowedDegreePaths = ["bachelor", "master", "postgraduate", "custom"];
   if (!allowedLanguages.includes(profile.language)) {
     return res.status(400).json({ error: "Invalid language." });

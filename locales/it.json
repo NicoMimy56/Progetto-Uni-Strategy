@@ -31,10 +31,17 @@
     "themeForest": "Forest",
     "themeSunset": "Sunset",
     "themeDark": "Dark",
+    "themeNight": "Night Light",
+    "themeSky": "Sky",
     "langTitle": "Lingua",
     "langHint": "Interfaccia dell'app.",
     "langIt": "IT",
-    "langEn": "EN"
+    "langEn": "EN",
+    "langFr": "FR",
+    "langDe": "DE",
+    "langRo": "RO",
+    "langEs": "ES",
+    "saved": "Impostazioni salvate"
   },
   "pendingBtn": "Da sostenere",
   "completedBtn": "Completati",
