@@ -22,7 +22,8 @@
   },
   "settings": {
     "pageTitle": "Configuracion",
-    "pageHint": "Personaliza tu recorrido, objetivo de graduacion, tema e idioma.",
+    "pageHint": "Personaliza recorrido, objetivo de graduacion, tema e idioma. Los cambios se aplican al guardar; si cambias de pestana sin guardar se descartan.",
+    "pageWarning": "Si no pulsas Guardar, la app y el servidor mantienen la configuracion anterior a abrir esta seccion.",
     "save": "Guardar configuracion",
     "courseTitle": "Recorrido de estudio",
     "courseHint": "Elige un recorrido; los CFU se actualizan automaticamente.",

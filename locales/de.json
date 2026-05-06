@@ -22,7 +22,8 @@
   },
   "settings": {
     "pageTitle": "Einstellungen",
-    "pageHint": "Passe Studienweg, Abschlussziel, Theme und Sprache an.",
+    "pageHint": "Passe Studienweg, Abschlussziel, Theme und Sprache an. Anderungen gelten erst nach Speichern; beim Tab wechseln ohne Speichern wird zuruckgesetzt.",
+    "pageWarning": "Ohne Speichern bleiben App und Server bei den Einstellungen wie vor dem Offnen dieses Bereichs.",
     "save": "Einstellungen speichern",
     "courseTitle": "Studienweg",
     "courseHint": "Wahle einen Weg; CFU werden automatisch gesetzt.",

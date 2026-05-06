@@ -22,7 +22,8 @@
   },
   "settings": {
     "pageTitle": "Setari",
-    "pageHint": "Personalizeaza traseul, obiectivul de absolvire, tema si limba.",
+    "pageHint": "Personalizeaza traseul, obiectivul de absolvire, tema si limba. Modificarile intra in aplicare dupa Salveaza; parasirea sectiunii fara salvare le anuleaza.",
+    "pageWarning": "Fara Salveaza, aplicatia si serverul pastreaza setarile de dinainte de a deschide aceasta sectiune.",
     "save": "Salveaza setarile",
     "courseTitle": "Traseu de studiu",
     "courseHint": "Alege traseul; CFU se actualizeaza automat.",

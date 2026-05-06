@@ -134,12 +134,12 @@ function applyTheme(theme) {
   root.style.setProperty("--text", theme.text);
   root.style.setProperty("--muted", theme.muted);
   root.style.setProperty("--border", theme.border || "#d9e1eb");
-  document.documentElement.classList.toggle("theme-dark", state.profile.themePreset === "dark");
+  document.documentElement.classList.toggle("theme-dark", getProfileForUi().themePreset === "dark");
 }
 
-/** @returns {object} preset colore attivo in base a state.profile.themePreset */
+/** @returns {object} preset colore da profilo UI (bozza Impostazioni o `state.profile` committato) */
 function getCurrentTheme() {
-  return THEME_PRESETS[state.profile.themePreset] || THEME_PRESETS.classic;
+  return THEME_PRESETS[getProfileForUi().themePreset] || THEME_PRESETS.classic;
 }
 
 /**
@@ -150,24 +150,25 @@ function getDefaultCfuByPath(path) {
   if (path === "bachelor") return 180;
   if (path === "master") return 120;
   if (path === "postgraduate") return 60;
-  return state.profile.totalCfu || 180;
+  return getProfileForUi().totalCfu || 180;
 }
 
-/** Sincronizza input numerici e stato "active" delle tile in tab Impostazioni. */
+/** Sincronizza input numerici e stato "active" delle tile in tab Impostazioni (bozza o profilo salvato). */
 function syncProfileInputs() {
   if (!settingsTabEl) return;
-  totalCfuInput.value = String(state.profile.totalCfu);
-  graduationTargetInput.value = String(state.profile.graduationTarget);
-  totalCfuInput.disabled = state.profile.degreePath !== "custom";
+  const p = getProfileForUi();
+  totalCfuInput.value = String(p.totalCfu);
+  graduationTargetInput.value = String(p.graduationTarget);
+  totalCfuInput.disabled = p.degreePath !== "custom";
 
   settingsTabEl.querySelectorAll("[data-settings-degree]").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.settingsDegree === state.profile.degreePath);
+    btn.classList.toggle("active", btn.dataset.settingsDegree === p.degreePath);
   });
   settingsTabEl.querySelectorAll("[data-settings-theme]").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.settingsTheme === state.profile.themePreset);
+    btn.classList.toggle("active", btn.dataset.settingsTheme === p.themePreset);
   });
   settingsTabEl.querySelectorAll("[data-settings-lang]").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.settingsLang === state.profile.language);
+    btn.classList.toggle("active", btn.dataset.settingsLang === p.language);
   });
 }
 
@@ -176,6 +177,41 @@ function syncProfileInputs() {
  * grezza così si vede subito in dev se init non è stata chiamata.
  */
 let i18nReady = false;
+
+/**
+ * Bozza profilo mentre il tab Impostazioni è aperto. `null` ⇒ niente bozza (tema/lingua/form seguono `state.profile`).
+ * Le modifiche restano qui finché non premi «Salva»; uscire dal tab senza salvare chiama `discardSettingsDraft`.
+ */
+let settingsDraftProfile = null;
+
+/** Profilo osservabile per tema, lingua locale picker e tile Impostazioni (boza o profilo salvato). */
+function getProfileForUi() {
+  return settingsDraftProfile !== null ? settingsDraftProfile : state.profile;
+}
+
+/** Ripristina tema, i18n e input dal profilo committato (`state.profile`). */
+async function discardSettingsDraft() {
+  if (settingsDraftProfile === null) return;
+  settingsDraftProfile = null;
+  applyTheme(getCurrentTheme());
+  document.documentElement.lang = state.profile.language;
+  if (i18nReady && window.i18next) {
+    await i18next.changeLanguage(state.profile.language);
+    translateStaticUi();
+    setupDateTimePickers();
+    syncProfileInputs();
+    render();
+  } else {
+    syncProfileInputs();
+    render();
+  }
+}
+
+/** All’ingresso nel tab Impostazioni: snapshot del profilo server per modifiche non persistenti fino a Salva. */
+function startSettingsDraft() {
+  settingsDraftProfile = { ...state.profile };
+  syncProfileInputs();
+}
 
 /** Dizionario annidato lingua → JSON caricato manualmente — usato da `t()` come fallback deterministico */
 let translationResources = {};
@@ -228,7 +264,7 @@ function t(key, options) {
   if (translated !== key) return translated;
 
   // Safety fallback for nested keys in case i18next config/cache mismatches.
-  const lang = state.profile.language || "it";
+  const lang = getProfileForUi().language || "it";
   const dict = translationResources[lang] || {};
   const fallback = key.split(".").reduce((acc, part) => (acc && typeof acc === "object" ? acc[part] : undefined), dict);
   return typeof fallback === "string" ? fallback : translated;
@@ -300,13 +336,14 @@ function normalizeStudyDay(rawDay) {
   return WEEK_DAYS.includes(cleaned) ? cleaned : rawDay;
 }
 
-/** Click su tile triennale/magistrale/... aggiorna CFU e stato custom. */
+/** Click su tile triennale/magistrale/... aggiorna CFU e stato custom (bozza Impostazioni). */
 function setDegreeFromTile(path) {
-  state.profile.degreePath = path;
+  const p = getProfileForUi();
+  p.degreePath = path;
   if (path !== "custom") {
-    state.profile.totalCfu = getDefaultCfuByPath(path);
+    p.totalCfu = getDefaultCfuByPath(path);
   }
-  totalCfuInput.value = String(state.profile.totalCfu);
+  totalCfuInput.value = String(p.totalCfu);
   totalCfuInput.disabled = path !== "custom";
   syncProfileInputs();
 }
@@ -559,7 +596,7 @@ function setupDateTimePickers() {
   if (typeof flatpickr === "function") {
     destroyDatePickers();
 
-    const useIt = state.profile.language === "it";
+    const useIt = getProfileForUi().language === "it";
     flatpickr(examDateInput, {
       dateFormat: "Y-m-d",
       altInput: true,
@@ -1398,7 +1435,7 @@ settingsTabEl.addEventListener("click", (event) => {
 
   const themeBtn = event.target.closest("[data-settings-theme]");
   if (themeBtn) {
-    state.profile.themePreset = themeBtn.dataset.settingsTheme;
+    getProfileForUi().themePreset = themeBtn.dataset.settingsTheme;
     applyTheme(getCurrentTheme());
     syncProfileInputs();
     return;
@@ -1414,7 +1451,7 @@ settingsTabEl.addEventListener("click", (event) => {
   if (langBtn) {
     if (!window.i18next || !i18nReady) return;
     const lng = langBtn.dataset.settingsLang;
-    state.profile.language = lng;
+    getProfileForUi().language = lng;
     document.documentElement.lang = lng;
     i18next
       .changeLanguage(lng)
@@ -1430,18 +1467,25 @@ settingsTabEl.addEventListener("click", (event) => {
   }
 });
 
-/** Salva profilo su server (`/api/settings/profile`) e riallinea tema + `translateStaticUi` + render completo */
+/**
+ * Persiste la bozza Impostazioni su `/api/settings/profile` e aggiorna `state.profile`;
+ * la bozza diventa una copia del profilo salvato (resti in modalità modifica sullo stesso tab).
+ */
 saveSettingsBtn.addEventListener("click", async () => {
+  if (!settingsDraftProfile) {
+    startSettingsDraft();
+  }
   const totalCfu = Number(totalCfuInput.value);
   const graduationTarget = Number(graduationTargetInput.value);
   if (!Number.isFinite(totalCfu) || totalCfu <= 0) return;
   if (!Number.isFinite(graduationTarget) || graduationTarget < 66 || graduationTarget > 110) return;
+  Object.assign(settingsDraftProfile, { totalCfu, graduationTarget });
   const profile = {
-    language: state.profile.language,
-    themePreset: state.profile.themePreset,
-    degreePath: state.profile.degreePath,
-    totalCfu,
-    graduationTarget
+    language: settingsDraftProfile.language,
+    themePreset: settingsDraftProfile.themePreset,
+    degreePath: settingsDraftProfile.degreePath,
+    totalCfu: settingsDraftProfile.totalCfu,
+    graduationTarget: settingsDraftProfile.graduationTarget
   };
   try {
     const data = await apiRequest("/api/settings/profile", {
@@ -1449,6 +1493,7 @@ saveSettingsBtn.addEventListener("click", async () => {
       body: JSON.stringify({ profile })
     });
     state.profile = { ...DEFAULT_PROFILE, ...data.profile };
+    settingsDraftProfile = { ...state.profile };
     syncProfileInputs();
     applyTheme(getCurrentTheme());
     await translateStaticUi();
@@ -1510,14 +1555,25 @@ logoutBtn.addEventListener("click", async () => {
   state.exams = [];
   state.studyPlan = [];
   state.targetGpa = 0;
+  settingsDraftProfile = null;
   state.profile = { ...DEFAULT_PROFILE };
   showAuthView("Disconnesso.");
 });
 
 /** Tab principali SPA “finta”: mostra/conce sezioni pre-renderizzate in index.html usando class `.active` */
 tabButtons.forEach((button) => {
-  button.addEventListener("click", () => {
+  button.addEventListener("click", async () => {
     const selectedTab = button.dataset.tab;
+    const currentSection = document.querySelector(".tab-content.active");
+    const wasOnSettings = currentSection?.id === "settings-tab";
+    const leavingSettings = wasOnSettings && selectedTab !== "settings";
+    const enteringSettingsFromElsewhere = selectedTab === "settings" && !wasOnSettings;
+    if (leavingSettings) {
+      await discardSettingsDraft();
+    }
+    if (enteringSettingsFromElsewhere) {
+      startSettingsDraft();
+    }
     tabButtons.forEach((btn) => btn.classList.remove("active"));
     tabContents.forEach((content) => content.classList.remove("active"));
     button.classList.add("active");
@@ -1615,6 +1671,7 @@ syncGradeInputByStatus();
  * 7. render() finale mostra stato coerente con server.
  */
 async function loadAppData() {
+  settingsDraftProfile = null;
   const data = await apiRequest("/api/bootstrap");
   state.exams = (data.exams || []).map((exam) => ({
     ...exam,

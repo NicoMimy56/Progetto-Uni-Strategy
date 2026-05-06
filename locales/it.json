@@ -22,7 +22,8 @@
   },
   "settings": {
     "pageTitle": "Impostazioni",
-    "pageHint": "Personalizza percorso, obiettivo di laurea, tema e lingua.",
+    "pageHint": "Personalizza percorso, obiettivo di laurea, tema e lingua. Le modifiche si applicano solo dopo «Salva impostazioni»: se cambi tab senza salvare, tornano i valori precedenti.",
+    "pageWarning": "Attenzione: se non premi «Salva impostazioni», sul server e nell’app restano le impostazioni che avevi prima di aprire questa sezione.",
     "save": "Salva impostazioni",
     "courseTitle": "Percorso di studi",
     "courseHint": "Scegli il tipo di corso; i CFU si aggiornano automaticamente.",

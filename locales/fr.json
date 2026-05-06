@@ -22,7 +22,8 @@
   },
   "settings": {
     "pageTitle": "Parametres",
-    "pageHint": "Personnalise ton parcours, ton objectif de diplome, le theme et la langue.",
+    "pageHint": "Personnalise parcours, objectif de diplome, theme et langue. Les changements sont appliques apres Enregistrer ; quitter l'onglet sans enregistrer les annule.",
+    "pageWarning": "Sans enregistrer, l'app et le serveur conservent les reglages d'avant l'ouverture de cette section.",
     "save": "Enregistrer les parametres",
     "courseTitle": "Parcours d'etudes",
     "courseHint": "Choisis un parcours; les CFU se mettent a jour automatiquement.",

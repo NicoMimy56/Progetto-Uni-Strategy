@@ -725,6 +725,24 @@ body.device-desktop td {
   }
 }
 
+/* Avviso Impostazioni: stesso peso della pageHint, senza “card” — solo accento tipografico */
+.settings-page-warning {
+  margin: 0.45rem 0 0;
+  padding: 0 0 0 0.72rem;
+  border: none;
+  background: none;
+  border-left: 2px solid color-mix(in srgb, var(--primary) 45%, var(--border));
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.52;
+  font-style: italic;
+  letter-spacing: 0.01em;
+}
+
+html.theme-dark .settings-page-warning {
+  border-left-color: color-mix(in srgb, var(--primary) 42%, transparent);
+}
+
 .settings-intro-card #save-settings-btn {
   margin-top: 0.75rem;
   width: 100%;

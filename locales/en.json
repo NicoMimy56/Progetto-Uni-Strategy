@@ -22,7 +22,8 @@
   },
   "settings": {
     "pageTitle": "Settings",
-    "pageHint": "Customize your path, graduation goal, theme and language.",
+    "pageHint": "Customize your path, graduation goal, theme and language. Changes apply only after Save settings — switch tabs without saving to discard them.",
+    "pageWarning": "If you do not tap Save settings, the app and server keep the settings you had before opening this section.",
     "save": "Save settings",
     "courseTitle": "Study path",
     "courseHint": "Pick a path; CFU update automatically.",

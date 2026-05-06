@@ -25,7 +25,7 @@ export const CALENDAR_WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Su
  * Suffisso query string nei `fetch('/locales/xx.json?v=…')`: incrementa quando cambi traduzioni
  * così il browser non serve una copia stale dalla cache durante lo sviluppo.
  */
-export const APP_I18N_VERSION = "2026-05-06-12";
+export const APP_I18N_VERSION = "2026-05-06-15";
 
 /** Lingue per cui esiste effettivamente un file `locales/<codice>.json` nel progetto */
 export const SUPPORTED_LANGUAGES = ["it", "en", "fr", "de", "ro", "es"];
