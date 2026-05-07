@@ -51,6 +51,21 @@ body {
   font-size: 1.2rem;
 }
 
+.brand-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.brand-logo {
+  width: 30px;
+  height: 30px;
+  display: block;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 1px 3px rgba(2, 6, 23, 0.28);
+}
+
 .auth-view {
   min-height: 100vh;
   display: grid;

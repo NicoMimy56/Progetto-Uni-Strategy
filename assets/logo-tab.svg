@@ -1,0 +1,16 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Uni-Strategy logo tab">
+  <defs>
+    <linearGradient id="bg" x1="16" y1="12" x2="112" y2="116" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#4F46E5"/>
+    </linearGradient>
+    <linearGradient id="book" x1="35" y1="34" x2="94" y2="94" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#EAF2FF"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="112" height="112" rx="26" fill="url(#bg)"/>
+  <path d="M34 42C43.2 38.3 51.7 38.7 60 43V89C51.8 84.7 43.4 84.3 34 88V42Z" fill="url(#book)"/>
+  <path d="M94 42C84.8 38.3 76.3 38.7 68 43V89C76.2 84.7 84.6 84.3 94 88V42Z" fill="url(#book)"/>
+  <path d="M42 60L56 60L56 68L42 68V60ZM42 73L56 73L56 81L42 81V73ZM72 68L82 58L88 64L72 80L66 74L72 68Z" fill="#20447F"/>
+</svg>

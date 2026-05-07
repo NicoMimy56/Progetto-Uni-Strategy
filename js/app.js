@@ -124,6 +124,25 @@ import { weightedGpa, simulatedGpa, daysRemaining } from "./academic.js";
 // VERSIONE QUERY su index.html (?v=...) — incrementala quando questo file cambia in modo compatibile/incompatibile col cache browser.
 // =============================================================================
 
+/** Tema -> file logo header (favicon tab resta fissa su `assets/logo-tab.svg`). */
+const HEADER_LOGO_BY_THEME = {
+  classic: "./assets/logo-header-classic.svg",
+  forest: "./assets/logo-header-forest.svg",
+  sunset: "./assets/logo-header-sunset.svg",
+  dark: "./assets/logo-header-dark.svg",
+  night: "./assets/logo-header-night.svg",
+  sky: "./assets/logo-header-sky.svg"
+};
+
+/** Aggiorna tutte le occorrenze `.brand-logo` (auth + topbar) in base al preset attivo. */
+function syncHeaderLogoByTheme() {
+  const preset = getProfileForUi().themePreset;
+  const src = HEADER_LOGO_BY_THEME[preset] || HEADER_LOGO_BY_THEME.classic;
+  document.querySelectorAll(".brand-logo").forEach((img) => {
+    if (img.getAttribute("src") !== src) img.setAttribute("src", src);
+  });
+}
+
 /**
  * Applica una palette (da THEME_PRESETS) alle variabili CSS globali (`--primary`, `--bg`, …).
  * Aggiunge/rimuove `html.theme-dark` in base al **preset nome** letto da `getProfileForUi()` così la bozza Impostazioni
@@ -140,6 +159,7 @@ function applyTheme(theme) {
   root.style.setProperty("--muted", theme.muted);
   root.style.setProperty("--border", theme.border || "#d9e1eb");
   document.documentElement.classList.toggle("theme-dark", getProfileForUi().themePreset === "dark");
+  syncHeaderLogoByTheme();
 }
 
 /** @returns {object} preset colore da profilo UI (bozza Impostazioni o `state.profile` committato) */
@@ -1122,6 +1142,8 @@ function renderStudyBoard(containerEl, showDeleteButton) {
 function render() {
   const language = state.profile.language;
   document.documentElement.lang = language;
+  /* Safety sync: assicura logo header coerente col tema anche dopo transizioni UI/cache strane. */
+  syncHeaderLogoByTheme();
   homeShowPendingBtn.textContent = t("pendingBtn");
   homeShowCompletedBtn.textContent = t("completedBtn");
 

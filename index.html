@@ -14,6 +14,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Uni-Strategy</title>
+    <link rel="icon" type="image/svg+xml" href="./assets/logo-tab.svg" />
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
@@ -24,7 +25,10 @@
     <!-- Schermata autenticazione (prima caricata se non sei loggato) -->
     <section id="auth-view" class="auth-view">
       <div class="auth-card">
-        <h1>Uni-Strategy</h1>
+        <h1 class="brand-title">
+          <img src="./assets/logo-header-classic.svg" alt="" class="brand-logo" />
+          <span>Uni-Strategy</span>
+        </h1>
         <p>Accedi per vedere solo i tuoi dati.</p>
         <div class="auth-tabs">
           <button id="auth-login-tab" class="auth-tab-btn active" type="button">Login</button>
@@ -48,7 +52,10 @@
     <div id="app-shell" class="hidden">
       <header class="topbar">
         <div>
-          <h1>Uni-Strategy</h1>
+          <h1 class="brand-title">
+            <img src="./assets/logo-header-classic.svg" alt="" class="brand-logo" />
+            <span>Uni-Strategy</span>
+          </h1>
           <p data-i18n="brandTagline">Your academic journey, fully under control.</p>
         </div>
         <button id="logout-btn" class="ghost-btn" type="button">Logout</button>
@@ -505,6 +512,6 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
     <!-- Client modulare ES2020: vedi cartella `js/` (constants, store, dom, api, academic + app.js) -->
-    <script type="module" src="./js/app.js?v=2026-05-06-20"></script>
+    <script type="module" src="./js/app.js?v=2026-05-06-21"></script>
   </body>
 </html>
