@@ -18,7 +18,10 @@
     "submit": "Trimite",
     "validation": "Completeaza subiectul si descrierea.",
     "successEmailed": "Trimis. Multumim!",
-    "successQueued": "Salvat. Email-ul nu este configurat pe server."
+    "successQueued": "Salvat. Email-ul nu este configurat pe server.",
+    "hintSmtpHost": "Salvat. Lipseste SMTP_HOST in .env — adauga, reporneste serverul.",
+    "hintSmtpPassword": "Salvat. SMTP_PASS goala — pentru Gmail foloseste parola de aplicatie, reporneste serverul.",
+    "hintSmtpFailed": "Salvat, dar trimiterea email a esuat. Verifica .env si consola serverului."
   },
   "settings": {
     "pageTitle": "Setari",

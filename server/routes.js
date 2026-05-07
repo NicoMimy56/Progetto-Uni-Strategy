@@ -354,21 +354,25 @@ function registerApiRoutes(app) {
 
     const id = Number(result.lastInsertRowid);
     let emailed = false;
+    let emailStatus;
 
     try {
-      emailed = await sendFeatureRequestMail({
+      const mailResult = await sendFeatureRequestMail({
         userEmail,
         subjectLine: subject,
         body: message
       });
+      emailed = Boolean(mailResult.sent);
+      emailStatus = mailResult.emailStatus;
       if (emailed) {
         db.prepare(`UPDATE feature_requests SET email_sent = 1 WHERE id = ?`).run(id);
       }
     } catch (err) {
       console.error("[feature-requests] email error:", err && err.message);
+      emailStatus = "smtp_error";
     }
 
-    return res.status(201).json({ ok: true, id, emailed });
+    return res.status(201).json({ ok: true, id, emailed, ...(emailStatus ? { emailStatus } : {}) });
   });
 
   app.delete("/api/simulated-exams/:id", requireAuth, (req, res) => {

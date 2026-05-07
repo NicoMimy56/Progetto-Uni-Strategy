@@ -18,7 +18,10 @@
     "submit": "Send request",
     "validation": "Please fill in both subject and details.",
     "successEmailed": "Request sent. Thank you!",
-    "successQueued": "Request saved on the server. Email is not configured yet; requests are kept in the database."
+    "successQueued": "Request saved on the server. Email is not configured yet; requests are kept in the database.",
+    "hintSmtpHost": "Request saved. SMTP_HOST is missing in .env — add it (e.g. smtp.gmail.com), restart the server, try again.",
+    "hintSmtpPassword": "Request saved. SMTP_PASS is empty in .env — for Gmail use an App Password, save, restart the server, try again.",
+    "hintSmtpFailed": "Request saved, but sending email failed (SMTP error). Check .env and the server terminal for details."
   },
   "settings": {
     "pageTitle": "Settings",

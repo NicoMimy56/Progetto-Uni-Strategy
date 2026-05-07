@@ -66,11 +66,24 @@ body {
   box-shadow: 0 1px 3px rgba(2, 6, 23, 0.28);
 }
 
+/*
+ * Login/register: sempre palette «Classic» (stesso preset Impostazioni → THEME_PRESETS.classic in js/constants.js),
+ * anche prima che applyTheme() carichi il profilo — così il viola brand è coerente col resto dell’app classic.
+ */
 .auth-view {
+  --primary: #8b5cf6;
+  --primary-dark: #4c1d95;
+  --bg: #f6f3ff;
+  --card-bg: #ffffff;
+  --text: #2b1f45;
+  --muted: #6f6291;
+  --border: #e3dafc;
+
   min-height: 100vh;
   display: grid;
   place-items: center;
   padding: 1.2rem;
+  color: var(--text);
   background:
     radial-gradient(circle at 12% 14%, color-mix(in srgb, var(--primary) 14%, transparent) 0, transparent 34%),
     radial-gradient(circle at 86% 86%, color-mix(in srgb, var(--primary-dark) 18%, transparent) 0, transparent 36%),
@@ -142,7 +155,7 @@ body {
   border-radius: 18px;
   padding: 1.1rem;
   backdrop-filter: blur(7px);
-  box-shadow: 0 16px 42px rgba(15, 47, 111, 0.15);
+  box-shadow: 0 16px 42px color-mix(in srgb, var(--primary-dark) 22%, transparent);
 }
 
 .auth-card h1 {
@@ -167,8 +180,8 @@ body {
 }
 
 .auth-tab-btn {
-  background: #e7edf8;
-  color: #20447f;
+  background: color-mix(in srgb, var(--primary) 10%, white);
+  color: var(--primary-dark);
 }
 
 .auth-tab-btn.active {

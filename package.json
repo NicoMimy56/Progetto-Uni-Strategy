@@ -5,13 +5,15 @@
   "main": "server.js",
   "scripts": {
     "dev": "node server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "smtp:verify": "node scripts/smtp-verify.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "better-sqlite3": "^12.9.0",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "i18next": "^26.0.8",
     "nodemailer": "^6.10.1"

@@ -18,7 +18,10 @@
     "submit": "Senden",
     "validation": "Bitte Betreff und Text ausfuellen.",
     "successEmailed": "Gesendet. Danke!",
-    "successQueued": "Gespeichert. SMTP ist noch nicht eingerichtet."
+    "successQueued": "Gespeichert. SMTP ist noch nicht eingerichtet.",
+    "hintSmtpHost": "Gespeichert. SMTP_HOST fehlt in .env — eintragen, Server neu starten.",
+    "hintSmtpPassword": "Gespeichert. SMTP_PASS leer — bei Gmail App-Passwort nutzen, Server neu starten.",
+    "hintSmtpFailed": "Gespeichert, aber E-Mail-Versand fehlgeschlagen. .env und Server-Log pruefen."
   },
   "settings": {
     "pageTitle": "Einstellungen",

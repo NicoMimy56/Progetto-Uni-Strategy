@@ -18,7 +18,10 @@
     "submit": "Invia richiesta",
     "validation": "Compila sia l’oggetto sia la descrizione.",
     "successEmailed": "Richiesta inviata. Grazie!",
-    "successQueued": "Richiesta registrata sul server. L’invio email non è ancora configurato: controlla comunque il database o configura SMTP."
+    "successQueued": "Richiesta registrata sul server. L’invio email non è ancora configurato: controlla comunque il database o configura SMTP.",
+    "hintSmtpHost": "Richiesta salvata. Il server non ha SMTP_HOST nel file .env: aggiungilo (es. smtp.gmail.com), riavvia e riprova.",
+    "hintSmtpPassword": "Richiesta salvata. Nel file .env manca SMTP_PASS: per Gmail inserisci una «Password per le app» (non la password normale), salva, riavvia il server e riprova.",
+    "hintSmtpFailed": "Richiesta salvata, ma l’invio email è fallito (errore SMTP). Controlla le credenziali in .env e il terminale del server per i dettagli."
   },
   "settings": {
     "pageTitle": "Impostazioni",

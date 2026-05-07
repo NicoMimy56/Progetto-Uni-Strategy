@@ -18,7 +18,10 @@
     "submit": "Enviar",
     "validation": "Rellena asunto y descripcion.",
     "successEmailed": "Enviado. Gracias!",
-    "successQueued": "Guardado en el servidor. Email aun no configurado."
+    "successQueued": "Guardado en el servidor. Email aun no configurado.",
+    "hintSmtpHost": "Guardado. Falta SMTP_HOST en .env — anadelo y reinicia el servidor.",
+    "hintSmtpPassword": "Guardado. SMTP_PASS vacia — con Gmail usa contrasena de aplicacion y reinicia.",
+    "hintSmtpFailed": "Guardado, pero fallo el envio SMTP. Revisa .env y la consola del servidor."
   },
   "settings": {
     "pageTitle": "Configuracion",

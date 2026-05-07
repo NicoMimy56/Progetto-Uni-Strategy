@@ -1841,8 +1841,8 @@ clearSimBtn.addEventListener("click", async () => {
 
 /**
  * Tab Richieste: POST `/api/feature-requests` (auth obbligatoria).
- * Il server salva sempre su SQLite; se `FEEDBACK_TO_EMAIL` + SMTP sono configurati risponde `emailed: true`
- * e il testo sotto form usa stringhe `requests.success*` di conseguenza.
+ * Il server salva sempre su SQLite; se SMTP è configurato e l'invio riesce, `emailed: true`.
+ * Altrimenti `emailStatus` indica il motivo (messaggio tradotto sotto il form).
  */
 featureRequestForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -1860,7 +1860,19 @@ featureRequestForm?.addEventListener("submit", async (event) => {
     });
     featureRequestForm?.reset();
     if (featureRequestStatusEl) {
-      featureRequestStatusEl.textContent = data.emailed ? t("requests.successEmailed") : t("requests.successQueued");
+      if (data.emailed) {
+        featureRequestStatusEl.textContent = t("requests.successEmailed");
+      } else {
+        const hintKey =
+          data.emailStatus === "missing_smtp_password"
+            ? "requests.hintSmtpPassword"
+            : data.emailStatus === "missing_smtp_host"
+              ? "requests.hintSmtpHost"
+              : data.emailStatus === "smtp_error"
+                ? "requests.hintSmtpFailed"
+                : "requests.successQueued";
+        featureRequestStatusEl.textContent = t(hintKey);
+      }
     }
   } catch (error) {
     alert(error.message);
