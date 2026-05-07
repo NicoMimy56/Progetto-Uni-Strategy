@@ -43,7 +43,7 @@ export async function apiRequest(path, options = {}) {
         }
       }
     } catch {
-      /* corpo vuoto o troncato: lascia message di default */
+      /* Risposta non leggibile come testo (corpo assente, stream interrotto, ecc.): si mantiene `message` iniziale. */
     }
     throw new Error(message);
   }

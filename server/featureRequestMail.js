@@ -1,21 +1,26 @@
 /**
  * @file server/featureRequestMail.js
  *
- * Invio email per le richieste di implementazione (feedback / feature request).
+ * Invio email dopo il salvataggio di una riga `feature_requests` (route POST `/api/feature-requests`).
  *
- * Configurazione tramite variabili d'ambiente (es. file `.env` caricato esternamente o export in shell):
- * - FEEDBACK_TO_EMAIL   — indirizzo che riceve le richieste (default: universitystrategy288@gmail.com se non impostato)
- * - SMTP_HOST           — server SMTP (es. smtp.gmail.com, smtp.office365.com)
- * - SMTP_PORT           — default 587
- * - SMTP_SECURE         — "true" per porta 465 (TLS implicito)
- * - SMTP_USER / SMTP_PASS — credenziali se il server le richiede
- * - SMTP_FROM           — mittente "envelope" (default: SMTP_USER)
+ * Variabili d’ambiente (caricate da `server.js` con `dotenv` sul file `.env` nella radice progetto):
+ * - `FEEDBACK_TO_EMAIL` — destinatario dell’inoltro (default in codice se omesso).
+ * - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` — endpoint server SMTP; per `smtp.gmail.com` si usa anche `service: "gmail"` in Nodemailer.
+ * - `SMTP_USER`, `SMTP_PASS` — autenticazione LOGIN se il provider la richiede.
+ * - `SMTP_FROM` — indirizzo mittente nell’envelope (fallback: `SMTP_USER`).
  *
- * Se manca SMTP_HOST (o credenziali incomplete per Gmail), la funzione non invia:
- * la richiesta resta comunque salvata nel database dalla route API.
+ * Comportamento `sendFeatureRequestMail`:
+ * - Oggetto messaggio: `${subjectLine} [${userEmail}]` (o `[—]` se email assente). Corpo testuale con intestazione fissa + testo utente.
+ * - `replyTo`: email dell’account autenticato che ha inviato la richiesta.
+ * - Se `SMTP_HOST` manca, oppure con utente Gmail `SMTP_PASS` è vuota dopo normalizzazione: ritorno `{ sent: false, emailStatus }` senza eccezione.
+ * - Errori di sessione SMTP: log su stderr, ritorno `{ sent: false, emailStatus: "smtp_error" }`.
  *
- * Gmail errore 535 BadCredentials: https://support.google.com/mail/?p=BadCredentials
- * (non è un errore del codice: Google rifiuta utente/password per quell’account.)
+ * Normalizzazione credenziali:
+ * - Utente: trim, rimozione caratteri invisibili, `NFKC`, minuscolo.
+ * - Password: stessa pulizia; host Gmail → rimozione spazi (password app tipicamente 16 lettere).
+ *
+ * Codici risposta HTTP Gmail 535 BadCredentials: credenziali non accettate; documentazione
+ * https://support.google.com/mail/?p=BadCredentials
  */
 const nodemailer = require("nodemailer");
 
@@ -26,6 +31,11 @@ function stripProblematicUnicode(s) {
     .replace(/[\u200B-\u200D\u2060\uFEFF]/g, "");
 }
 
+/**
+ * Normalizza l’indirizzo in `SMTP_USER`: rimuove caratteri invisibili, normalizza Unicode, minuscolo.
+ * @param {string|undefined} raw Valore grezzo da `process.env.SMTP_USER`.
+ * @returns {string}
+ */
 function normalizeSmtpUser(raw) {
   if (!raw) return "";
   return stripProblematicUnicode(String(raw).trim())
@@ -36,7 +46,7 @@ function normalizeSmtpUser(raw) {
 /** Destinatario predefinito delle richieste (sovrascrivibile con FEEDBACK_TO_EMAIL). */
 const DEFAULT_FEEDBACK_TO_EMAIL = "universitystrategy288@gmail.com";
 
-/** True se la config punta a Gmail (usa trasporto dedicato di Nodemailer). */
+/** Indica se `SMTP_HOST` (normalizzato) corrisponde a Gmail: in tal caso Nodemailer usa `service: "gmail"`. */
 function isGmailSmtpHost(host) {
   if (!host) return false;
   const h = String(host).trim().toLowerCase();
@@ -62,6 +72,10 @@ function normalizeSmtpPassword(host, rawPass) {
   return pass;
 }
 
+/**
+ * Legge host, utente e password da `process.env` e applica le normalizzazioni Gmail / unicode.
+ * @returns {{ host: string|undefined, user: string, passForAuth: string, useGmail: boolean }}
+ */
 function getSmtpAuthContext() {
   const host = process.env.SMTP_HOST && String(process.env.SMTP_HOST).trim();
   const user = normalizeSmtpUser(process.env.SMTP_USER);
@@ -97,6 +111,10 @@ function getSmtpDiagnostics() {
   };
 }
 
+/**
+ * Crea il transporter Nodemailer: per host Gmail `service: "gmail"`, altrimenti configurazione host/porta/STARTTLS.
+ * @param {{ host?: string, user: string, passForAuth: string, useGmail: boolean }} ctx
+ */
 function createSmtpTransporterFromContext(ctx) {
   const { host, user, passForAuth, useGmail } = ctx;
   if (!host) return null;
@@ -205,7 +223,7 @@ async function sendFeatureRequestMail({ userEmail, subjectLine, body }) {
     logSmtpError(err);
     if (ctx.useGmail) {
       console.error(
-        "[feature-requests email] Gmail 535 = credenziali rifiutate. Vedi: https://support.google.com/mail/?p=BadCredentials — usa SMTP_USER = email esatta dell’account con cui crei la «Password per le app» (dopo 2FA). Account con Protezione Avanzata: niente password per le app."
+        "[feature-requests email] Gmail: autenticazione SMTP non accettata. Riferimento interno modulo e https://support.google.com/mail/?p=BadCredentials"
       );
     }
     return { sent: false, emailStatus: EMAIL_STATUS.smtp_error };

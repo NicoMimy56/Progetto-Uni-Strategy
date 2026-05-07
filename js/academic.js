@@ -1,24 +1,24 @@
 /**
  * @file js/academic.js
  *
- * Funzioni **pure** per calcoli sul piano di studi (nessun accesso a `state` o `document`).
+ * Funzioni pure (senza lettura di `state` o `document`) per calcoli sul piano di studi.
  * Separarle facilita:
  * - capire la formula della media senza scorrere l'interfaccia;
  * - riusare le stesse formule in test automatici o in un worker;
  * - tenere `app.js` focalizzato su DOM e flussi.
  *
- * Scala voti: sistema italiano universitario tipico **18–30** (eventuale lode trattata come 31
+ * Scala voti: sistema italiano universitario tipico 18–30 (eventuale lode trattata come 31
  * in alcuni contesti; `simulatedGpa` e le validazioni server accettano fino a 31).
  */
 
 /**
- * Media ponderata degli esami **già superati** con voto numerico valido.
+ * Media ponderata degli esami già superati con voto numerico valido.
  * Esclude: esami non `Completed`, o `Completed` senza `grade` numerico.
  *
  * Formula: Σ(voto × CFU) / Σ(CFU) sul sottoinsieme filtrato.
  *
  * @param {Array<{ status: string, grade?: number|null, credits: number }>} exams
- * @returns {number} media ponderata oppure **0** se denominatore nullo (nessun CFU conta).
+ * @returns {number} media ponderata oppure 0 se denominatore nullo (nessun CFU conta).
  */
 export function weightedGpa(exams) {
   const completed = exams.filter((e) => e.status === "Completed" && Number.isFinite(e.grade));
@@ -30,7 +30,7 @@ export function weightedGpa(exams) {
 /**
  * Media ipotetica che mescola:
  * - esami realmente superati (come `weightedGpa`);
- * - righe del **simulatore**, con voti pianificati e CFU dichiarati.
+ * - righe del simulatore, con voti pianificati e CFU dichiarati.
  *
  * Serve alla UI per mostrare “se passassi anche questi con voto X la media sarebbe Y”.
  * Non altera il database degli esami veri finché l'utente non li inserisce come Completed.
@@ -50,7 +50,7 @@ export function simulatedGpa(exams, simulatedExams) {
 }
 
 /**
- * Differenza in **giorni di calendario** tra “oggi” (mezzanotte locale) e una data ISO `YYYY-MM-DD`.
+ * Differenza in giorni di calendario tra «oggi» (mezzanotte locale) e una data ISO `YYYY-MM-DD`.
  *
  * Attenzione: `new Date("YYYY-MM-DD")` è interpretato come UTC in molti motori; poi `setHours(0…)`
  * sposta nella timezone locale. Per gli esami salvati solo come data senza ora è il compromesso usuale.

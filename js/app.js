@@ -1,12 +1,43 @@
 /**
- * Uni-Strategy — applicazione browser (entry `type="module"`).
+ * @file app.js
+ * Punto di ingresso lato browser (`type="module"`).
  *
- * Struttura:
- * - `constants.js` — costanti e palette temi
- * - `store.js` — stato applicativo e timer UI
- * - `dom.js` — cache elementi HTML
- * - `api.js` — fetch autenticato
- * - `academic.js` — medie e giorni all'esame
+ * Import:
+ * - ./constants.js — giorni, calendario, versione cache i18n, lingue supportate, preset tema, profilo default.
+ * - ./store.js — state applicativo, stato popover orario studio, timer UI, data mese calendario.
+ * - ./dom.js — riferimenti ai nodi DOM corrispondenti agli id definiti in index.html.
+ * - ./api.js — richieste HTTP JSON con `credentials: same-origin` (cookie sessione).
+ * - ./academic.js — media ponderata, media con simulatore, calcolo giorni rispetto a una data ISO.
+ *
+ * Non importati (caricati da index.html o globale):
+ * - flatpickr e localizzazione italiana (CDN) — campo data esame.
+ * - window.i18next (bundle in /vendor/i18next) — dizionari /locales/*.json.
+ *
+ * Sequenza di avvio:
+ * 1. Il parser HTML completa il DOM; dom.js legge gli elementi.
+ * 2. Esecuzione immediata di setDeviceMode() e syncGradeInputByStatus().
+ * 3. initializeApp() effettua GET /api/auth/me; risposta positiva → loadAppData() → render();
+ *    altrimenti showAuthView() con modulo Login/Registrati.
+ *
+ * Modello di rendering:
+ * Nessun virtual DOM: dopo operazioni che cambiano dati si aggiorna state (store) e si chiama render(),
+ * che ricalcola innerHTML delle tabelle e ridisegna il canvas dove serve (costo lineare nel numero di righe).
+ *
+ * Riferimento per navigazione nel sorgente:
+ * - Impostazioni (bozza vs salvato): getProfileForUi, settingsDraftProfile, discardSettingsDraft,
+ *   startSettingsDraft, syncProfileInputs, setDegreeFromTile, listener su #settings-tab.
+ * - Tema e lingua: applyTheme, getCurrentTheme, syncHeaderLogoByTheme, initI18n, t, translateStaticUi,
+ *   getBrowserPreferredLanguage (lingua da navigator se profilo senza lingua valida).
+ * - Home — ordinamento esami: comparePendingExamsClosestFirst, compareCompletedBy*, state.homeExamFilter,
+ *   state.homeCompletedSort, chip [data-home-sort].
+ * - Grafico andamento: drawTrendChart, scheduleTrendChartDraw, isTrendChartVisible.
+ * - Calendario e piano studio: renderCalendar, renderStudyPlan, renderHomeStudyPlan, setupStudyTimePicker.
+ * - Autenticazione: setAuthMode, showAuthView, showAppView, listener su form auth e logout.
+ * - Bootstrap remoto: loadAppData (GET /api/bootstrap, merge profilo, i18n, tema, render).
+ * - Listener: sezione con addEventListener su form, delegazione su tabelle dinamiche.
+ *
+ * Versioning: aggiornare la query ?v= sul tag script di app.js in index.html quando si pubblica una
+ * revisione che non deve essere servita da cache obsoleta.
  */
 import {
   WEEK_DAYS,
@@ -90,41 +121,7 @@ import {
 import { apiRequest } from "./api.js";
 import { weightedGpa, simulatedGpa, daysRemaining } from "./academic.js";
 
-// =============================================================================
-// Guida rapida — js/app.js (orchestrazione UI Uni-Strategy)
-//
-// DIPENDENZE GLOBALI NON IMPORTATE:
-// - `flatpickr` e `flatpickr.l10ns.it` caricati da CDN in index.html (date form esami).
-// - `i18next` / `window.i18next` caricato da /vendor/i18next (traduzioni runtime).
-//
-// FLUSSO AVVIO BROWSER:
-// 1. Il parser HTML costruisce il DOM → dom.js può leggere gli ID.
-// 2. Questo modulo viene eseguito: `setDeviceMode()` + `syncGradeInputByStatus()` immediati.
-// 3. `initializeApp()` prova GET /api/auth/me; se cookie valido → loadAppData() → render().
-//    Altrimenti showAuthView() e l’utente vede Login/Registrati.
-//
-// MODELLO AGGIORNAMENTO UI:
-// Nessun Virtual DOM: dopo quasi ogni mutation API aggiorni `state` (store.js) e chiami `render()`.
-// Questo ricostruisce innerHTML delle tabelle e ridisegna canvas dove necessario — semplice ma O(n).
-//
-// | Sezione codice                         | Responsabilità principale |
-// |---------------------------------------|---------------------------|
-// | settingsDraft*, getProfileForUi       | Bozza Impostazioni vs profilo salvato; tab discard/save |
-// | compareCompletedBy* …                 | Ordinamento tabella Home → filtro «Completati» |
-// | applyTheme … setDegreeFromTile        | Variabili CSS + tile Impostazioni |
-// | initI18n, t, translateStaticUi …      | Lingue / testi DOM / stato esame tradotto |
-// | picker esame + studio                 | Flatpickr, analog clock popover HH:MM |
-// | weightedGpa (import), render()        | KPI, tabelle Home/Gestione, simulatore |
-// | drawTrendChart                        | Canvas: media progressive, target, laurea |
-// | renderCalendar / renderStudyBoard     | Calendario mese + colonne giorno studio |
-// | Auth / Device                         | Schede login, classe body mobile-desktop |
-// | Listener in coda                      | Tutti gli addEventListener (API + render) |
-// | loadAppData / initializeApp           | Bootstrap dati dopo sessione OK |
-//
-// VERSIONE QUERY su index.html (?v=...) — incrementala quando questo file cambia in modo compatibile/incompatibile col cache browser.
-// =============================================================================
-
-/** Tema -> file logo header (favicon tab resta fissa su `assets/logo-tab.svg`). */
+/** Mappa preset tema (chiave THEME_PRESETS) → percorso SVG logo in topbar e schermata auth. */
 const HEADER_LOGO_BY_THEME = {
   classic: "./assets/logo-header-classic.svg",
   forest: "./assets/logo-header-forest.svg",
@@ -144,10 +141,10 @@ function syncHeaderLogoByTheme() {
 }
 
 /**
- * Applica una palette (da THEME_PRESETS) alle variabili CSS globali (`--primary`, `--bg`, …).
- * Aggiunge/rimuove `html.theme-dark` in base al **preset nome** letto da `getProfileForUi()` così la bozza Impostazioni
- * aggiorna subito classe scura anche se `state.profile` non è ancora salvato sul server.
- * @param {typeof import("./constants.js").THEME_PRESETS.classic} theme oggetto colori derivato dal preset selezionato
+ * Scrive le variabili CSS globali (`--primary`, `--bg`, …) da un oggetto preset in `THEME_PRESETS`.
+ * Imposta o rimuove la classe `html.theme-dark` quando il nome preset è `dark`, usando `getProfileForUi()`
+ * così il tema della bozza Impostazioni si riflette prima del salvataggio sul server.
+ * @param {typeof import("./constants.js").THEME_PRESETS.classic} theme Colori del preset attivo.
  */
 function applyTheme(theme) {
   const root = document.documentElement;
@@ -162,7 +159,7 @@ function applyTheme(theme) {
   syncHeaderLogoByTheme();
 }
 
-/** @returns {object} preset colore da profilo UI (bozza Impostazioni o `state.profile` committato) */
+/** @returns {object} preset colore da profilo UI (bozza Impostazioni o `state.profile` già salvato sul server) */
 function getCurrentTheme() {
   return THEME_PRESETS[getProfileForUi().themePreset] || THEME_PRESETS.classic;
 }
@@ -214,7 +211,7 @@ let settingsDraftProfile = null;
 
 /**
  * Oggetto profilo da cui leggere tema, lingua, tile CFU mentre l’utente modifica Impostazioni.
- * Con bozza attiva (`settingsDraftProfile`) le modifiche **non** aggiornano `state.profile` finché non si salva;
+ * Con bozza attiva (`settingsDraftProfile`) le modifiche non aggiornano `state.profile` finché non si salva;
  * così KPI e altre tab continuano a usare i valori confermati. Senza bozza torna sempre `state.profile`.
  * @returns {object} snapshot profilo (stessa forma di `state.profile` / `DEFAULT_PROFILE`)
  */
@@ -224,7 +221,7 @@ function getProfileForUi() {
 
 /**
  * Abbandono tab Impostazioni senza salvataggio: scarta la bozza e riporta interfaccia tema/lingua/form
- * allo stato **committato** (`state.profile`). Usato dalla navigazione tab prima di montare la nuova sezione.
+ * allo stato già persistito in `state.profile` (valori confermati sul server). Usato dalla navigazione tab prima di montare la nuova sezione.
  */
 async function discardSettingsDraft() {
   if (settingsDraftProfile === null) return;
@@ -244,7 +241,7 @@ async function discardSettingsDraft() {
 }
 
 /**
- * Chiamato **solo** quando si entra nel tab Impostazioni da un altro tab (`!wasOnSettings`).
+ * Chiamato esclusivamente quando si entra nel tab Impostazioni da un altro tab (`!wasOnSettings`).
  * Copia superficiale `state.profile` → `settingsDraftProfile`: da qui le tile e gli input modificano la bozza.
  * Se si ri-clicca «Impostazioni» restandoci sopra non si reinizializza (evita perdere modifiche non salvate).
  */
@@ -303,7 +300,7 @@ function t(key, options) {
   const translated = i18next.t(key, options);
   if (translated !== key) return translated;
 
-  // Safety fallback for nested keys in case i18next config/cache mismatches.
+  // Se i18next restituisce ancora la chiave grezza, risaliamo manualmente `translationResources[lang]` con path annidato da `key` (punto come separatore), così una discrepanza tra cache i18next e JSON caricati non lascia la chiave a video.
   const lang = getProfileForUi().language || "it";
   const dict = translationResources[lang] || {};
   const fallback = key.split(".").reduce((acc, part) => (acc && typeof acc === "object" ? acc[part] : undefined), dict);
@@ -408,7 +405,7 @@ function setDegreeFromTile(path) {
   syncProfileInputs();
 }
 
-// --- Flatpickr (data esame) + popover ora studio ---
+// Sezione: selezione data esame (flatpickr) e popover orario sessioni studio
 /** Rimuove istanza flatpickr precedente prima di ricrearla (cambio lingua). */
 function destroyDatePickers() {
   [examDateInput].forEach((el) => {
@@ -668,7 +665,7 @@ function setupDateTimePickers() {
   setupStudyTimePicker();
 }
 
-/** Messaggio fugace dopo salvataggio profilo Impostazioni. */
+/** Messaggio temporaneo dopo salvataggio profilo Impostazioni. */
 function showSettingsSavedToast() {
   if (!settingsSavedToastEl) return;
   settingsSavedToastEl.textContent = t("settings.saved");
@@ -699,7 +696,7 @@ function setAuthMode(mode) {
   if (authStatusEl) authStatusEl.textContent = "";
 }
 
-/** Mostra card login e nasconde shell principale (utente sloggato o errore). */
+/** Mostra `#auth-view` e nasconde `#app-shell`: avvio senza sessione, dopo logout, credenziali rifiutate o fallimento di `/api/auth/me` / bootstrap (messaggio opzionale in `#auth-status`). */
 function showAuthView(message = "") {
   authViewEl.classList.remove("hidden");
   appShellEl.classList.add("hidden");
@@ -721,18 +718,18 @@ function setDeviceMode() {
   document.body.classList.toggle("device-desktop", !isMobile);
 }
 
-// ---------------------------------------------------------------------------
-// Home — ordinamenti tabella Esami (#upcoming-table-body)
-//
-// - **Da sostenere** (non Completed): sempre `comparePendingExamsClosestFirst` (nessuna scelta utente): ordine è
-//   priorità alla data nell’assieme “quanto manca allo scadere” usando `daysRemaining` (coerenza con la colonna Giorni):
-//   giorni più piccoli (anche negativi = passati) prima, poi elenco alfabetico se pari giorno.
-// - **Completati**: comparators più sotto solo dopo `.filter(Completed)`, `state.homeCompletedSort` sugli chip.
-//
-// Regole comuni liste completate per data/voto: senza data/voto verso fondo del criterio; tie-break sempre materia (`compareExamSubjectStable`).
-// ---------------------------------------------------------------------------
+/**
+ * Home — ordinamento righe in `#upcoming-table-body`.
+ * Vista esami non completati: `comparePendingExamsClosestFirst` (chiave da `daysRemaining`, coerente con colonna Giorni; parità giorni → materia).
+ * Vista esami completati: `compareCompletedBy*` secondo `state.homeCompletedSort` (chip `[data-home-sort]`).
+ * Nei completati, mancanza di data o di voto numerico: verso il fondo del criterio; parità finale → `compareExamSubjectStable`.
+ */
 
-/** Tie-break alfabetico su `subject`: evita ordine oscillante quando data o voto coincidono. */
+/**
+ * Tie-break alfabetico su `subject` per ordinamenti Home (completati e pending).
+ * @param {{ subject?: string }} a
+ * @param {{ subject?: string }} b
+ */
 function compareExamSubjectStable(a, b) {
   return String(a.subject || "").localeCompare(String(b.subject || ""), undefined, { sensitivity: "base" });
 }
@@ -743,7 +740,7 @@ function getExamGradeNullable(exam) {
   return g != null && Number.isFinite(Number(g)) ? Number(g) : null;
 }
 
-/** Chiave ordinamento “vicinanza”: esami senza data efficaci vanno sempre **dopo** quelli calendarizzati. */
+/** Chiave ordinamento “vicinanza”: esami senza data calendario o senza giorni residui numerici ricevono `Infinity` e restano dopo quelli con data e giorni noti. */
 function pendingExamProximitySortKey(exam) {
   if (!exam.examDate) return Number.POSITIVE_INFINITY;
   const dr = daysRemaining(exam.examDate);
@@ -752,7 +749,7 @@ function pendingExamProximitySortKey(exam) {
 }
 
 /**
- * Da sostenere: ordine fisso (**non** modificabile dall’utente): dal più urgente cronologicamente.
+ * Da sostenere: ordine fisso non modificabile dall’utente (nessun chip): dal più urgente secondo `pendingExamProximitySortKey`.
  * Usa anche `daysRemaining` come la colonna «Giorni» su Home (↑ scaduti/oggi/imminenti sopra dei lontani, senza data in coda).
  */
 function comparePendingExamsClosestFirst(a, b) {
@@ -925,7 +922,7 @@ function drawTrendChart(exams, targetGpa, graduationTarget) {
 
   /**
    * Linea tratteggiata arancione: traduce il target di laurea (profilo utente su scala /110 nominale triennale)
-   * nella scala /30 delle medie degli esami. È una **conversione proporzionale semplificata**, non la formula ministeriale dei voti ai fini leggali.
+   * nella scala /30 delle medie degli esami tramite proporzione lineare 30/110; non costituisce conversione ufficiale o normativa del voto di laurea.
    */
   const graduationTargetAvg = (graduationTarget * 30) / 110;
   if (graduationTargetAvg >= 18 && graduationTargetAvg <= 31) {
@@ -1033,7 +1030,7 @@ function drawTrendChart(exams, targetGpa, graduationTarget) {
 
 /**
  * Vista mensile degli esami pianificati o in corso (`status !== "Completed"`).
- * Completati con data restano nella tab lista ma qui non sporcano il calendario (semantic choice product).
+ * Gli esami con stato Completato non compaiono nelle celle del calendario mensile (restano solo in elenco/tab Home); la griglia mostra solo esami ancora da pianificare o in corso.
  *
  * Padding iniziale: parte la griglia dalla colonna lunedi europea usando `(getDay()+6)%7`.
  * `toISOString().slice(0,10)` per il confronto giorno ↔ `exam_date` preserva coerenza con stringhe salvate dal client.
@@ -1164,7 +1161,7 @@ function renderStudyBoard(containerEl, showDeleteButton) {
 function render() {
   const language = state.profile.language;
   document.documentElement.lang = language;
-  /* Safety sync: assicura logo header coerente col tema anche dopo transizioni UI/cache strane. */
+  /* Allinea il logo (`.brand-logo`) al preset tema corrente ad ogni `render`; stesso ciclo che aggiorna tabelle e KPI, così tema e immagine restano sincronizzati dopo ogni modifica di stato. */
   syncHeaderLogoByTheme();
   homeShowPendingBtn.textContent = t("pendingBtn");
   homeShowCompletedBtn.textContent = t("completedBtn");
@@ -1227,8 +1224,8 @@ function render() {
   const isCompletedView = state.homeExamFilter === "completed";
 
   /*
-   * `homeCompletedSort` è impostato dai chip `[data-home-sort]` (solo vista completati). Se il valore fosse alterato nel DOM,
-   * normalizziamo a `dateAsc` per non lasciare uno switch senza caso valido dopo refresh o debug console.
+   * `homeCompletedSort` è impostato dai chip `[data-home-sort]` (solo vista completati).
+   * Se contenesse un valore non ammesso, si forza `dateAsc` così lo `switch` sotto ha sempre un caso definito dopo ricarica pagina o modifica diretta di `state`.
    */
   const allowedCompletedSorts = new Set(["dateAsc", "dateDesc", "gradeDesc", "gradeAsc"]);
   if (!allowedCompletedSorts.has(state.homeCompletedSort)) {
@@ -1347,8 +1344,8 @@ function render() {
   creditsChartEl.style.background = `conic-gradient(#22c55e ${degree}deg, var(--muted) ${degree}deg 360deg)`;
 
   /**
-   * «Obiettivo media»: se impostato, stima naive della media ponderata futura sulle CFU rimanenti
-   * usando risoluzione primo grado: ( Σ target*total − current_weighted_completed ) / remaining_credits.
+   * «Obiettivo media» (campo Home): se `targetGpa` > 0, calcola la media aritmetica minima sulle CFU residue
+   * affinché la media ponderata totale raggiunga il target, con modello lineare (target×ΣCFU − Σ(voto×CFU completati)) / CFU rimanenti.
    */
   targetAverageHomeEl.value = targetGpa > 0 ? targetGpa.toFixed(2) : "";
   if (targetGpa > 0) {
@@ -1397,15 +1394,13 @@ function render() {
   });
 }
 
-// =============================================================================
-// Listener DOM — pattern comune: event.preventDefault, validazioni rapide JS, apiRequest(await),
-// aggiorni state tramite helper save*, poi render(). Gli alert sono fallback UX minimo senza libreria toast.
-//
-// IMPORTANTE su examTableBody/simTableBody/studyBoard: si usa delegation laddove possibile
-// (examTableBody un solo listener per edit/save/delete) per ridurre registrazioni su righe dinamiche.
-// =============================================================================
-
-/** Form Gestione nuovo esame — POST poi prepend in lista come fa il server ORDER BY id DESC */
+/**
+ * Listener DOM: `preventDefault` su submit, validazioni minime, `await apiRequest`, aggiornamento `state` con `save*`, `render()`.
+ * Errori rete o HTTP: `alert(message)` (senza libreria toast).
+ * Su `examTableBody` delegazione eventi per azioni edit/salva/elimina su righe dinamiche.
+ *
+ * Form nuovo esame (Gestione): POST `/api/exams`; il server ordina per `id DESC`, quindi la riga creata compare in testa.
+ */
 examForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const subject = document.getElementById("subject").value.trim();
@@ -1569,7 +1564,7 @@ studyForm.addEventListener("submit", async (event) => {
   }
 });
 
-/** Remove singola sessione — il bottone porta `data-session-id` generato dalla renderStudyBoard HTML string */
+/** Rimozione singola sessione studio: il pulsante ha `data-session-id` assegnato in `renderStudyBoard` nel template HTML della riga. */
 studyBoardEl.addEventListener("click", async (event) => {
   const target = event.target;
   if (target.tagName !== "BUTTON") return;
@@ -1618,7 +1613,7 @@ homeCompletedSortWrap?.addEventListener("click", (event) => {
 
 /**
  * Impostazioni: event delegation dentro `#settings-tab`.
- * Aggiorna **solo la bozza** (`getProfileForUi`) per tile grado/tema/lingua; preset voto laurea scrive nell’`<input>`
+ * Aggiorna unicamente la bozza (`getProfileForUi`, non `state.profile` finché non si salva) per tile grado/tema/lingua; i preset voto laurea scrivono nell’`<input>`
  * (persistenza numeri inclusa al click «Salva impostazioni» insieme al resto del profilo).
  */
 settingsTabEl.addEventListener("click", (event) => {
@@ -1668,8 +1663,7 @@ settingsTabEl.addEventListener("click", (event) => {
  */
 saveSettingsBtn.addEventListener("click", async () => {
   /*
-   * `startSettingsDraft` di sicurezza: se qualcuno clicca Salva prima che il click tab abbia mai creato la bozza
-   * (edge case tooling), cloniamo comunque il profilo attuale invece di dereferenziare null.
+   * Garantisce che esista `settingsDraftProfile` prima del PUT: se «Salva» viene attivato senza passaggio da `startSettingsDraft` (es. ordine insolito di eventi), si esegue comunque una copia corrente di `state.profile` per evitare riferimenti null.
    */
   if (!settingsDraftProfile) {
     startSettingsDraft();
@@ -1706,7 +1700,7 @@ saveSettingsBtn.addEventListener("click", async () => {
 authLoginTabBtn.addEventListener("click", () => setAuthMode("login"));
 authRegisterTabBtn.addEventListener("click", () => setAuthMode("register"));
 
-/** Login: cookie HttpOnly dalla risposta, poi caricamento stato completo e ridisegno grafico quando torni in Home */
+/** Login: il server imposta cookie di sessione HttpOnly; poi `loadAppData`, `showAppView` e pianificazione ridisegno grafico andamento se si apre la tab Home. */
 authLoginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const email = document.getElementById("auth-login-email").value.trim();
@@ -1725,7 +1719,7 @@ authLoginForm.addEventListener("submit", async (event) => {
   }
 });
 
-/** Registrazione: POST crea anche sessione logged-in sul server così esperienza continua direttamente nell’area app */
+/** Registrazione: POST crea utente e sessione autenticata lato server; il client prosegue come dopo login (`loadAppData`, `showAppView`). */
 authRegisterForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const email = document.getElementById("auth-register-email").value.trim();
@@ -1748,9 +1742,9 @@ logoutBtn.addEventListener("click", async () => {
   try {
     await apiRequest("/api/auth/logout", { method: "POST" });
   } catch {
-    /* Reale network fail: comunque wipe locale per non tenere sullo schermo dati sensibili */
+    /* Fallimento di rete sul POST logout: si prosegue comunque con pulizia locale per non lasciare dati dell’area autenticata in memoria o in vista. */
   }
-  /* Resetta state memoria anche se logout server fallisce così shell auth non rimane zombie */
+  /* Svuota `state` lato client anche se la richiesta di logout non è riuscita, così non resta visibile la shell app senza sessione valida. */
   state.exams = [];
   state.studyPlan = [];
   state.targetGpa = 0;
@@ -1763,10 +1757,10 @@ logoutBtn.addEventListener("click", async () => {
 /**
  * Tab principali SPA senza routing: toggle `.active` su bottoni nav e `#<id>-tab` corrispondente.
  *
- * Eccezione **Impostazioni**:
- * - uscendo (`leavingSettings`) senza salvare → `discardSettingsDraft()` ripristina tema/lingua/form da server;
- * - entrando da altro tab → `startSettingsDraft()` fotografa profilo così modifiche successive restano una bozza;
- * - re-click su Impostazioni da già su Impostazioni **non** resetta bozza (`enteringSettingsFromElsewhere` falso).
+ * Comportamento dedicato al tab Impostazioni:
+ * - uscendo (`leavingSettings`) senza salvare → `discardSettingsDraft()` ripristina tema, lingua e campi dal profilo già caricato (`state.profile`);
+ * - entrando da un altro tab → `startSettingsDraft()` copia `state.profile` nella bozza così le modifiche locali non sovrascrivono il profilo finché non si salva;
+ * - un secondo click su Impostazioni restando sullo stesso tab non richiama `startSettingsDraft()` (`enteringSettingsFromElsewhere` è falso), quindi la bozza non viene reinizializzata.
  */
 tabButtons.forEach((button) => {
   button.addEventListener("click", async () => {
@@ -1791,7 +1785,7 @@ tabButtons.forEach((button) => {
   });
 });
 
-/** Simulatore: non crea righe nella tab exams — solo simulated_exams; render aggiorna testo confrontation media vs sim avg */
+/** Simulatore: POST su `/api/simulated-exams` (tabella `simulated_exams`), senza inserire in `exams`; `render()` aggiorna il testo che confronta media attuale e media simulata. */
 simulatorForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const subject = document.getElementById("sim-subject").value.trim();
@@ -1813,7 +1807,7 @@ simulatorForm.addEventListener("submit", async (event) => {
   }
 });
 
-/** Click su pulsante elimina dentro tabella righe simulator */
+/** Eliminazione singola riga simulatore: click sul pulsante nella tabella `#sim-table-body`. */
 simTableBody.addEventListener("click", async (event) => {
   const target = event.target;
   if (target.tagName !== "BUTTON") return;
@@ -1828,7 +1822,7 @@ simTableBody.addEventListener("click", async (event) => {
   }
 });
 
-/** DELETE bulk simulated exams */
+/** Svuota tutte le righe simulate: `DELETE /api/simulated-exams` senza id in path. */
 clearSimBtn.addEventListener("click", async () => {
   try {
     await apiRequest("/api/simulated-exams", { method: "DELETE" });
@@ -1883,18 +1877,19 @@ featureRequestForm?.addEventListener("submit", async (event) => {
 setDeviceMode();
 syncGradeInputByStatus();
 /**
- * Chiamato dopo login/registro o ricarico pagina con sessione ancora valida.
- * Passi in ordine:
- * 1. GET `/api/bootstrap` atomico con tutti i dataset necessari alla UI corrente.
- * 2. Normalizzazioni difensive (`normalizeExamStatus`, `normalizeStudyDay`) per compat JSON vecchi/errori storici lingua.
- * 3. Profilo fuse con DEFAULT per chiavi nuove mai salvate prima sul server (forward compatibility).
- * 4. Lingua sconosciuta (es. dopo rimozione file locale) ⇒ fallback sicuro alla default app.
- * 5. Prima init i18next full resources vs cambio lingua se già caricata (evita doppio fetch massiccio dei JSON da client).
- * 6. Ritraduzione etichette statiche DOM, tile impostazioni, CSS variables tema, picker data/ora eventualmente ricreati.
- * 7. render() finale mostra stato coerente con server.
+ * Esegue il bootstrap applicativo dopo login, sessione valida o ricarica pagina autenticata.
+ *
+ * Ordine delle operazioni:
+ * 1. Azzeramento `settingsDraftProfile` (allineamento alla nuova copia server).
+ * 2. GET `/api/bootstrap`: esami, piano studio, simulazioni, target media, profilo JSON.
+ * 3. Normalizzazione `status` esami e `day` sessioni studio (compatibilità dati legacy / traduzioni).
+ * 4. Merge di `profile` con `DEFAULT_PROFILE` (chiavi mancanti sul server).
+ * 5. Lingua: se `profile.language` è assente o non è in `SUPPORTED_LANGUAGES`, si assegna `getBrowserPreferredLanguage()`.
+ * 6. Inizializzazione o cambio lingua i18next, `document.documentElement.lang`, testi statici, tile Impostazioni.
+ * 7. `applyTheme`, ricreazione flatpickr / popover orari, `render()`.
  */
 async function loadAppData() {
-  /* Nuovo dataset server ⇒ niente bozza Impostazioni incoerente col profilo appena caricato. */
+  /* Coerenza bozza Impostazioni: al nuovo bootstrap non deve restare una bozza riferita al profilo precedente. */
   settingsDraftProfile = null;
   const browserPreferredLanguage = getBrowserPreferredLanguage();
   const data = await apiRequest("/api/bootstrap");
@@ -1929,10 +1924,9 @@ async function loadAppData() {
 }
 
 /**
- * Entry applicativa client modulo:
- * Tentativo HEAD-like leggero sulla session col GET `/api/auth/me` (riceve sempre JSON anche se errore ⇒ catch).
- * - OK ⇒ loadAppData + shell app ;
- * - 401 ⇒ mostra vista auth vuota (`showAuthView`) e predisponde form login (`setAuthMode`).
+ * Avvio applicazione: verifica sessione con GET `/api/auth/me`.
+ * Risposta positiva: `loadAppData`, `showAppView`, pianificazione disegno grafico andamento.
+ * Risposta HTTP non 2xx o errore di rete (tipicamente 401 senza cookie valido): `showAuthView` e scheda Login attiva.
  */
 async function initializeApp() {
   try {
@@ -1948,7 +1942,7 @@ async function initializeApp() {
 
 initializeApp();
 
-/** Responsive: classe body device-mobile/device-desktop influenza layout CSS (sticky tab, ecc.) ; canvas grafico deve ridimensionarsi al resize finestra */
+/** Su `resize`: ricalcolo modalità dispositivo (`device-mobile` / `device-desktop`) e ridimensionamento grafico andamento. */
 window.addEventListener("resize", () => {
   setDeviceMode();
   scheduleTrendChartDraw();

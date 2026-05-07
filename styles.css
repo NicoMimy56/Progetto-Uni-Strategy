@@ -851,7 +851,7 @@ th {
   color: #2f4e83;
 }
 
-/* Desktop profile automatically enabled by JS class */
+/* Layout «desktop»: attivato da `setDeviceMode()` in app.js tramite la classe `device-desktop` su `body`. */
 body.device-desktop {
   background: #eef2f7;
 }

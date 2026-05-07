@@ -25,14 +25,14 @@ db.pragma("journal_mode = WAL");
 /**
  * Schema relazionale (sintesi):
  *
- * - **users**: account (email univoca, hash password + sale).
- * - **user_sessions**: token opachi legati a `user_id` con scadenza assoluta (`expires_at` ms).
- * - **exams**: esami dell'utente; `user_id` NULL era possibile in DB legacy, oggi le API filtrano per utente corrente.
- * - **study_sessions**: slot piano studio; `id` TEXT (UUID dal client) per idempotenza lato insert.
- * - **settings**: KV globale (poco usato nel flusso attuale).
- * - **user_settings**: KV per utente; chiavi note `target_gpa` (stringa numerica) e `profile` (JSON stringificato).
- * - **simulated_exams**: righe del simulatore media (non copiano la tabella exams).
- * - **feature_requests**: richieste di implementazione dal tab Richieste; `email_sent` indica se l’SMTP ha accettato l’invio.
+ * - Tabella `users`: account (email univoca, hash password + sale).
+ * - Tabella `user_sessions`: token opachi legati a `user_id` con scadenza assoluta (`expires_at` ms).
+ * - Tabella `exams`: esami dell'utente; `user_id` NULL era possibile in DB legacy, oggi le API filtrano per utente corrente.
+ * - Tabella `study_sessions`: slot piano studio; `id` TEXT (UUID dal client) per idempotenza lato insert.
+ * - Tabella `settings`: KV globale (poco usato nel flusso attuale).
+ * - Tabella `user_settings`: KV per utente; chiavi note `target_gpa` (stringa numerica) e `profile` (JSON stringificato).
+ * - Tabella `simulated_exams`: righe del simulatore media (non copiano la tabella `exams`).
+ * - Tabella `feature_requests`: richieste dal tab Richieste; `email_sent` indica se l’SMTP ha accettato l’invio.
  */
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (

@@ -1,18 +1,18 @@
 /**
  * @file js/constants.js
  *
- * Dati immutabili condivisi da tutta l'applicazione client **senza dipendere dal DOM**.
+ * Dati immutabili condivisi da tutta l'applicazione client senza dipendere dal DOM.
  * Separarli da `app.js` permette:
  * - import chiari e tree-shaking potenziale;
  * - test unitari su funzioni pure che importano solo queste costanti;
  * - un solo posto dove aggiornare versione cache i18n o elenco lingue.
  *
- * Il server e il client usano gli stessi valori di stato esame in **inglese** (`To Take`, …)
+ * Il server e il client usano gli stessi valori di stato esame in inglese (`To Take`, …)
  * per stabilità API; la traduzione in italiano/altro avviene nel browser tramite `t("status.*")`.
  */
 
 /**
- * Ordine giorni per il **piano studio** (colonne Lunedì → Domenica).
+ * Ordine giorni per il piano studio (colonne da lunedì a domenica).
  * Le stringhe sono in inglese (`Monday`) per stabilità lato DB/API; il testo visualizzato
  * deriva sempre da `t("days.Monday")` ecc.
  */

@@ -5,12 +5,12 @@
  *
  * Perché esiste questo file:
  * - evita decine di `document.getElementById` sparsi e riduce errori di typo negli ID;
- * - documenta in un colpo solo quali ID **devono** esistere in `index.html` perché l'app funzioni;
+ * - documenta in un colpo solo quali ID devono esistere in `index.html` perché l'app funzioni;
  * - l'entry `app.js` resta più leggibile (`examForm` vs `document.getElementById("exam-form")`).
  *
  * Il modulo viene valutato dopo che il parser HTML ha costruito il DOM (script in fondo al `<body>`),
  * quindi `getElementById` non è null per gli elementi presenti nel markup. Se un ID manca, il valore
- * sarà `null` e il primo accesso genererà errore — utile per fail-fast in sviluppo.
+ * sarà `null` e il primo accesso genererà un’eccezione, così in sviluppo si individua subito un ID mancante nel markup.
  *
  * Convenzione nomi: suffisso `El` per singoli elementi, `Body` per `<tbody>`, collezioni `querySelectorAll`.
  */
