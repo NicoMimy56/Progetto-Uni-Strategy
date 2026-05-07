@@ -230,8 +230,57 @@ async function sendFeatureRequestMail({ userEmail, subjectLine, body }) {
   }
 }
 
+/**
+ * Email di conferma indirizzo dopo registrazione. Richiede gli stessi parametri SMTP delle altre mail transazionali.
+ *
+ * @param {{ toEmail: string, code: string }} opts Codice a 6 cifre (testo in chiaro nell’email).
+ * @returns {Promise<{ sent: boolean, emailStatus?: string }>}
+ */
+async function sendVerificationEmail({ toEmail, code }) {
+  const ctx = getSmtpAuthContext();
+  if (!ctx.host) {
+    console.warn("[verify-email] SMTP_HOST mancante: impossibile inviare conferma registrazione");
+    return { sent: false, emailStatus: EMAIL_STATUS.missing_smtp_host };
+  }
+  if (ctx.user && !ctx.passForAuth) {
+    console.warn("[verify-email] SMTP_PASS vuota: impossibile inviare conferma registrazione");
+    return { sent: false, emailStatus: EMAIL_STATUS.missing_smtp_password };
+  }
+
+  const transporter = createSmtpTransporterFromContext(ctx);
+  if (!transporter) {
+    return { sent: false, emailStatus: EMAIL_STATUS.missing_smtp_host };
+  }
+
+  const fromAddress = process.env.SMTP_FROM || ctx.user || "noreply@localhost";
+  const text = [
+    "Conferma il tuo account Uni-Strategy",
+    "",
+    `Il tuo codice di verifica (valido 30 minuti): ${code}`,
+    "",
+    "Inseriscilo nell’app nella schermata che appare subito dopo la registrazione.",
+    "",
+    "Se non hai richiesto tu questa registrazione, ignora questo messaggio."
+  ].join("\n");
+
+  try {
+    await transporter.sendMail({
+      from: `"Uni-Strategy" <${fromAddress}>`,
+      to: toEmail,
+      subject: `Codice verifica Uni-Strategy: ${code}`,
+      text
+    });
+    console.log(`[verify-email] Inviata conferma a ${toEmail}`);
+    return { sent: true };
+  } catch (err) {
+    logSmtpError(err);
+    return { sent: false, emailStatus: EMAIL_STATUS.smtp_error };
+  }
+}
+
 module.exports = {
   sendFeatureRequestMail,
+  sendVerificationEmail,
   EMAIL_STATUS,
   getSmtpDiagnostics,
   verifySmtpCredentials,

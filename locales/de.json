@@ -23,6 +23,19 @@
     "hintSmtpPassword": "Gespeichert. SMTP_PASS leer — bei Gmail App-Passwort nutzen, Server neu starten.",
     "hintSmtpFailed": "Gespeichert, aber E-Mail-Versand fehlgeschlagen. .env und Server-Log pruefen."
   },
+  "auth": {
+    "verifyEmailSent": "Wir haben dir einen 6-stelligen Code per E-Mail geschickt. Unten eingeben (30 Min gueltig). Spam-Ordner pruefen.",
+    "verifyEmailNotSent": "E-Mail konnte nicht gesendet werden (SMTP). Server konfigurieren, dann «Code erneut senden».",
+    "emailNotVerified": "Gib den 6-stelligen Code aus der E-Mail ein, oder fordere einen neuen an.",
+    "resendVerification": "Code erneut per E-Mail senden",
+    "resendSent": "Wenn das Konto existiert und noch unbestaetigt ist, pruefe die E-Mail fuer den neuen Code.",
+    "resendNeedEmail": "E-Mail-Adresse erforderlich (Login-Feld oder Code-Bildschirm).",
+    "verifyCodeIntro": "6-stelligen Code eingeben, gesendet an:",
+    "verifyCodeLabel": "Code (6 Ziffern)",
+    "verifyCodeSubmit": "Bestaetigen und anmelden",
+    "verifyBack": "Zurueck zum Login",
+    "verifyWrongCode": "Falscher oder abgelaufener Code. Erneut versuchen oder Code erneut senden."
+  },
   "settings": {
     "pageTitle": "Einstellungen",
     "pageHint": "Passe Studienweg, Abschlussziel, Theme und Sprache an. Anderungen gelten erst nach Speichern; beim Tab wechseln ohne Speichern wird zuruckgesetzt.",

@@ -212,6 +212,44 @@ body {
   color: #b91c1c !important;
 }
 
+.auth-resend-wrap {
+  margin-top: 0.5rem;
+}
+
+.auth-resend-btn {
+  width: 100%;
+  font-weight: 600;
+}
+
+.auth-verify-wrap {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.auth-verify-intro {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--text);
+  opacity: 0.92;
+}
+
+.auth-verify-email-display {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  word-break: break-all;
+}
+
+.auth-verify-actions {
+  display: flex;
+  justify-content: stretch;
+}
+
+.auth-verify-actions .ghost-btn {
+  width: 100%;
+}
+
 @media (max-width: 760px) {
   .auth-layout {
     grid-template-columns: 1fr;

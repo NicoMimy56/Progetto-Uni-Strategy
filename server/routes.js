@@ -10,8 +10,10 @@
  * - Le DELETE senza body spesso restituiscono `204 No Content` (corpo vuoto); il client `apiRequest` lo gestisce.
  *
  * Tabella rapida endpoint (metodo, path, auth):
- * | POST   | /api/auth/register     | no  |
+ * | POST   | /api/auth/register     | no  | crea utente; invia codice a 6 cifre per email; nessun cookie finché non si conferma |
  * | POST   | /api/auth/login        | no  |
+ * | POST   | /api/auth/verify-code  | no  | body `{ email, code }`; imposta cookie sessione se OK |
+ * | POST   | /api/auth/resend-verification | no  | body `{ email }`; nuovo codice se account non verificato |
  * | POST   | /api/auth/logout       | no  (invalida sessione se presente) |
  * | GET    | /api/auth/me           | no  (401 se cookie assente/invalido) |
  * | GET    | /api/bootstrap         | sì  |
@@ -31,6 +33,7 @@
  *
  * In coda: `app.use("/api", ...)` → 404 JSON per path API errati (non HTML).
  */
+const crypto = require("crypto");
 const { db } = require("./database");
 const {
   hashPassword,
@@ -41,7 +44,17 @@ const {
   requireAuth
 } = require("./auth");
 const { toExamRow, toStudyRow, toSimulatedExamRow } = require("./mappers");
-const { sendFeatureRequestMail } = require("./featureRequestMail");
+const { sendFeatureRequestMail, sendVerificationEmail } = require("./featureRequestMail");
+
+/** Codice numerico a 6 cifre per conferma email (evita ambiguità tipo O/0). */
+function generateEmailVerificationCode() {
+  return String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
+}
+
+function normalizeVerificationCode(raw) {
+  const digits = String(raw || "").replace(/\D/g, "");
+  return digits.length >= 6 ? digits.slice(-6) : digits;
+}
 
 /**
  * Registra tutte le route sull'istanza Express passata dall'esterno.
@@ -61,11 +74,10 @@ function registerApiRoutes(app) {
   /* ---------------------------------------------------------------------------
    * POST /api/auth/register
    * Body: { email, password }
-   * - email normalizzata lowercase/trim; controllo rudimentale presenza "@".
-   * - password minimo 6 caratteri (allineato al minlength sul form HTML).
-   * Risultati: 201 + cookie sessione + { user }; 409 se email duplicata; 400 validazione.
+   * Crea utente non verificato, genera codice a 6 cifre (validità 30 min) e lo invia per email se SMTP ok.
+   * 201: { needsVerification, verificationEmailSent, user }
    * --------------------------------------------------------------------------- */
-  app.post("/api/auth/register", (req, res) => {
+  app.post("/api/auth/register", async (req, res) => {
     const email = String(req.body.email || "").trim().toLowerCase();
     const password = String(req.body.password || "");
     if (!email.includes("@") || password.length < 6) {
@@ -76,28 +88,36 @@ function registerApiRoutes(app) {
       return res.status(409).json({ error: "Email already registered." });
     }
     const { salt, hash } = hashPassword(password);
+    const code = generateEmailVerificationCode();
+    const verifyExpires = Date.now() + 30 * 60 * 1000;
     const result = db
       .prepare(
-        `INSERT INTO users (email, password_hash, password_salt)
-         VALUES (?, ?, ?)`
+        `INSERT INTO users (email, password_hash, password_salt, email_verified_at, email_verify_token, email_verify_expires_at)
+         VALUES (?, ?, ?, NULL, ?, ?)`
       )
-      .run(email, hash, salt);
+      .run(email, hash, salt, code, verifyExpires);
     const userId = Number(result.lastInsertRowid);
-    const token = createSession(userId);
-    setSessionCookie(res, token);
-    return res.status(201).json({ user: { id: userId, email } });
+    const mailResult = await sendVerificationEmail({ toEmail: email, code });
+    return res.status(201).json({
+      needsVerification: true,
+      verificationEmailSent: mailResult.sent,
+      user: { id: userId, email }
+    });
   });
 
   /* ---------------------------------------------------------------------------
    * POST /api/auth/login
    * Stesso formato body. 401 messaggio generico "Invalid credentials" sia se email sconosciuta
    * sia se hash non combacia (non rivelare quale campo è errato — hardening enumeration).
+   * 403 con code `email_not_verified` se la password è corretta ma l’email non è stata confermata.
    * --------------------------------------------------------------------------- */
   app.post("/api/auth/login", (req, res) => {
     const email = String(req.body.email || "").trim().toLowerCase();
     const password = String(req.body.password || "");
     const user = db
-      .prepare("SELECT id, email, password_hash, password_salt FROM users WHERE email = ?")
+      .prepare(
+        "SELECT id, email, password_hash, password_salt, email_verified_at FROM users WHERE email = ?"
+      )
       .get(email);
     if (!user) {
       return res.status(401).json({ error: "Invalid credentials." });
@@ -105,6 +125,13 @@ function registerApiRoutes(app) {
     const { hash } = hashPassword(password, user.password_salt);
     if (hash !== user.password_hash) {
       return res.status(401).json({ error: "Invalid credentials." });
+    }
+    if (user.email_verified_at == null) {
+      return res.status(403).json({
+        error:
+          "Inserisci il codice a 6 cifre ricevuto per email oppure chiedi un nuovo invio prima di accedere.",
+        code: "email_not_verified"
+      });
     }
     const token = createSession(user.id);
     setSessionCookie(res, token);
@@ -132,6 +159,55 @@ function registerApiRoutes(app) {
       return res.status(401).json({ error: "Not authenticated." });
     }
     return res.json({ user: { id: user.id, email: user.email } });
+  });
+
+  /* POST /api/auth/verify-code — body { email, code }; conferma email e crea sessione */
+  app.post("/api/auth/verify-code", (req, res) => {
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const code = normalizeVerificationCode(req.body.code);
+    if (!email.includes("@") || code.length !== 6) {
+      return res.status(400).json({ error: "Email o codice non validi." });
+    }
+    const now = Date.now();
+    const row = db
+      .prepare(
+        `SELECT id, email FROM users
+         WHERE email = ?
+           AND email_verified_at IS NULL
+           AND email_verify_token = ?
+           AND email_verify_expires_at IS NOT NULL
+           AND email_verify_expires_at > ?`
+      )
+      .get(email, code, now);
+    if (!row) {
+      return res.status(400).json({ error: "Codice errato o scaduto." });
+    }
+    db.prepare(
+      `UPDATE users SET email_verified_at = ?, email_verify_token = NULL, email_verify_expires_at = NULL WHERE id = ?`
+    ).run(now, row.id);
+    const sessionToken = createSession(row.id);
+    setSessionCookie(res, sessionToken);
+    return res.json({ verified: true, user: { id: row.id, email: row.email } });
+  });
+
+  /* POST /api/auth/resend-verification — body { email }; nuovo codice se account non verificato */
+  app.post("/api/auth/resend-verification", async (req, res) => {
+    const email = String(req.body.email || "").trim().toLowerCase();
+    if (!email.includes("@")) {
+      return res.status(400).json({ error: "Email non valida." });
+    }
+    const row = db.prepare("SELECT id, email FROM users WHERE email = ? AND email_verified_at IS NULL").get(email);
+    if (row) {
+      const code = generateEmailVerificationCode();
+      const verifyExpires = Date.now() + 30 * 60 * 1000;
+      db.prepare(`UPDATE users SET email_verify_token = ?, email_verify_expires_at = ? WHERE id = ?`).run(
+        code,
+        verifyExpires,
+        row.id
+      );
+      await sendVerificationEmail({ toEmail: row.email, code });
+    }
+    return res.json({ ok: true });
   });
 
   /* ---------------------------------------------------------------------------

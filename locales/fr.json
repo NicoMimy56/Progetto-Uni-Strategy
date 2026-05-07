@@ -23,6 +23,19 @@
     "hintSmtpPassword": "Demande enregistree. SMTP_PASS vide — avec Gmail utilisez un mot de passe d’application, redemarrez le serveur.",
     "hintSmtpFailed": "Demande enregistree, mais l’envoi SMTP a echoue. Verifiez .env et la console serveur."
   },
+  "auth": {
+    "verifyEmailSent": "Nous avons envoye un code a 6 chiffres. Saisissez-le ci-dessous (valide 30 min). Verifiez aussi les indesirables.",
+    "verifyEmailNotSent": "Envoi impossible (SMTP). Configurez le serveur puis utilisez « Renvoyer le code ».",
+    "emailNotVerified": "Saisissez le code a 6 chiffres recu par e-mail, ou demandez un nouvel envoi.",
+    "resendVerification": "Renvoyer le code par e-mail",
+    "resendSent": "Si le compte existe et n'est pas confirme, verifiez votre boite pour le nouveau code.",
+    "resendNeedEmail": "Une adresse e-mail est necessaire (champ de connexion ou ecran du code).",
+    "verifyCodeIntro": "Saisissez le code a 6 chiffres envoye a :",
+    "verifyCodeLabel": "Code (6 chiffres)",
+    "verifyCodeSubmit": "Confirmer et se connecter",
+    "verifyBack": "Retour a la connexion",
+    "verifyWrongCode": "Code incorrect ou expire. Reessayez ou renvoyez le code."
+  },
   "settings": {
     "pageTitle": "Parametres",
     "pageHint": "Personnalise parcours, objectif de diplome, theme et langue. Les changements sont appliques apres Enregistrer ; quitter l'onglet sans enregistrer les annule.",

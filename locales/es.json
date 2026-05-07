@@ -23,6 +23,19 @@
     "hintSmtpPassword": "Guardado. SMTP_PASS vacia — con Gmail usa contrasena de aplicacion y reinicia.",
     "hintSmtpFailed": "Guardado, pero fallo el envio SMTP. Revisa .env y la consola del servidor."
   },
+  "auth": {
+    "verifyEmailSent": "Te enviamos un codigo de 6 digitos. Introducelo abajo (valido 30 min). Revisa spam.",
+    "verifyEmailNotSent": "No se pudo enviar el correo (SMTP). Configura el servidor y usa «Reenviar codigo».",
+    "emailNotVerified": "Introduce el codigo de 6 digitos del correo o pide uno nuevo.",
+    "resendVerification": "Reenviar codigo por correo",
+    "resendSent": "Si la cuenta existe y no esta confirmada, revisa el correo para el nuevo codigo.",
+    "resendNeedEmail": "Se necesita un correo (campo de login o pantalla del codigo).",
+    "verifyCodeIntro": "Introduce el codigo de 6 digitos enviado a:",
+    "verifyCodeLabel": "Codigo (6 digitos)",
+    "verifyCodeSubmit": "Confirmar y entrar",
+    "verifyBack": "Volver al login",
+    "verifyWrongCode": "Codigo incorrecto o caducado. Reintenta o reenvia."
+  },
   "settings": {
     "pageTitle": "Configuracion",
     "pageHint": "Personaliza recorrido, objetivo de graduacion, tema e idioma. Los cambios se aplican al guardar; si cambias de pestana sin guardar se descartan.",

@@ -23,6 +23,19 @@
     "hintSmtpPassword": "Request saved. SMTP_PASS is empty in .env — for Gmail use an App Password, save, restart the server, try again.",
     "hintSmtpFailed": "Request saved, but sending email failed (SMTP error). Check .env and the server terminal for details."
   },
+  "auth": {
+    "verifyEmailSent": "We emailed you a 6-digit code. Enter it below (valid 30 minutes). Check spam too.",
+    "verifyEmailNotSent": "We could not send the email (SMTP missing or error). Fix server settings, then use “Resend code”.",
+    "emailNotVerified": "Enter the 6-digit code from your email, or request a new code.",
+    "resendVerification": "Resend code by email",
+    "resendSent": "If the account exists and is still unconfirmed, check your inbox for the new code.",
+    "resendNeedEmail": "An email address is required (login field, or the code screen).",
+    "verifyCodeIntro": "Enter the 6-digit code we sent to:",
+    "verifyCodeLabel": "Code (6 digits)",
+    "verifyCodeSubmit": "Confirm and sign in",
+    "verifyBack": "Back to login",
+    "verifyWrongCode": "Wrong or expired code. Try again or resend."
+  },
   "settings": {
     "pageTitle": "Settings",
     "pageHint": "Customize your path, graduation goal, theme and language. Changes apply only after Save settings — switch tabs without saving to discard them.",

@@ -25,7 +25,7 @@ db.pragma("journal_mode = WAL");
 /**
  * Schema relazionale (sintesi):
  *
- * - Tabella `users`: account (email univoca, hash password + sale).
+ * - Tabella `users`: account (email univoca, hash password + sale); opzionalmente `email_verified_at` (ms epoch) e token di verifica finché l’utente non conferma l’email.
  * - Tabella `user_sessions`: token opachi legati a `user_id` con scadenza assoluta (`expires_at` ms).
  * - Tabella `exams`: esami dell'utente; `user_id` NULL era possibile in DB legacy, oggi le API filtrano per utente corrente.
  * - Tabella `study_sessions`: slot piano studio; `id` TEXT (UUID dal client) per idempotenza lato insert.
@@ -129,6 +129,15 @@ if (!hasColumn("exams", "user_id")) {
 }
 if (!hasColumn("study_sessions", "user_id")) {
   db.exec("ALTER TABLE study_sessions ADD COLUMN user_id INTEGER");
+}
+
+/* Verifica email in registrazione: colonne aggiunte in un secondo momento; utenti già presenti restano considerati verificati. */
+if (!hasColumn("users", "email_verified_at")) {
+  db.exec("ALTER TABLE users ADD COLUMN email_verified_at INTEGER");
+  db.exec("ALTER TABLE users ADD COLUMN email_verify_token TEXT");
+  db.exec("ALTER TABLE users ADD COLUMN email_verify_expires_at INTEGER");
+  const legacyVerified = Date.now();
+  db.prepare("UPDATE users SET email_verified_at = ? WHERE email_verified_at IS NULL").run(legacyVerified);
 }
 
 module.exports = { db, hasColumn };

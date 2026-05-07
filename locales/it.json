@@ -23,6 +23,19 @@
     "hintSmtpPassword": "Richiesta salvata. Nel file .env manca SMTP_PASS: per Gmail inserisci una «Password per le app» (non la password normale), salva, riavvia il server e riprova.",
     "hintSmtpFailed": "Richiesta salvata, ma l’invio email è fallito (errore SMTP). Controlla le credenziali in .env e il terminale del server per i dettagli."
   },
+  "auth": {
+    "verifyEmailSent": "Ti abbiamo inviato un'email con un codice a 6 cifre. Inseriscilo qui sotto (valido 30 minuti). Controlla anche lo spam.",
+    "verifyEmailNotSent": "Non siamo riusciti a inviare l'email (SMTP non configurato o errore). Configura il server e usa «Reinvia email di conferma».",
+    "emailNotVerified": "Inserisci il codice a 6 cifre ricevuto per email, oppure chiedi un nuovo invio.",
+    "resendVerification": "Reinvia codice per email",
+    "resendSent": "Se l'account esiste ed è ancora da confermare, controlla la posta per il nuovo codice.",
+    "resendNeedEmail": "Serve un indirizzo email (sopra nel login, o nella schermata codice).",
+    "verifyCodeIntro": "Inserisci il codice a 6 cifre che hai ricevuto all'indirizzo:",
+    "verifyCodeLabel": "Codice (6 cifre)",
+    "verifyCodeSubmit": "Conferma e accedi",
+    "verifyBack": "Torna al login",
+    "verifyWrongCode": "Codice errato o scaduto. Riprova o «Reinvia codice»."
+  },
   "settings": {
     "pageTitle": "Impostazioni",
     "pageHint": "Personalizza percorso, obiettivo di laurea, tema e lingua. Le modifiche si applicano solo dopo «Salva impostazioni»: se cambi tab senza salvare, tornano i valori precedenti.",

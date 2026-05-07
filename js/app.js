@@ -32,7 +32,7 @@
  *   state.homeCompletedSort, chip [data-home-sort].
  * - Grafico andamento: drawTrendChart, scheduleTrendChartDraw, isTrendChartVisible.
  * - Calendario e piano studio: renderCalendar, renderStudyPlan, renderHomeStudyPlan, setupStudyTimePicker.
- * - Autenticazione: setAuthMode, showAuthView, showAppView, listener su form auth e logout.
+ * - Autenticazione: setAuthMode, showAuthView, showAppView, verifica email a codice, listener su form auth e logout.
  * - Bootstrap remoto: loadAppData (GET /api/bootstrap, merge profilo, i18n, tema, render).
  * - Listener: sezione con addEventListener su form, delegazione su tabelle dinamiche.
  *
@@ -113,6 +113,15 @@ import {
   authLoginForm,
   authRegisterForm,
   logoutBtn,
+  authTabsEl,
+  authVerifyWrap,
+  authVerifyCodeForm,
+  authVerifyEmailHidden,
+  authVerifyEmailDisplay,
+  authVerifyCodeInput,
+  authVerifyBackBtn,
+  authResendWrap,
+  authResendBtn,
   featureRequestForm,
   featureRequestSubject,
   featureRequestMessage,
@@ -686,13 +695,37 @@ function resetAddExamForm() {
   applyExamDateStatusRule();
 }
 
+function hideVerifyCodeUI() {
+  authVerifyWrap?.classList.add("hidden");
+  if (authVerifyCodeInput) authVerifyCodeInput.value = "";
+}
+
+/** Schermata «inserisci il codice inviato per email» (dopo registrazione o login con email non verificata). */
+async function openVerifyCodeStep(email, statusMessage = "") {
+  hideVerifyCodeUI();
+  authTabsEl?.classList.add("hidden");
+  authLoginForm?.classList.add("hidden");
+  authRegisterForm?.classList.add("hidden");
+  authVerifyWrap?.classList.remove("hidden");
+  if (authVerifyEmailHidden) authVerifyEmailHidden.value = email;
+  if (authVerifyEmailDisplay) authVerifyEmailDisplay.textContent = email;
+  authResendWrap?.classList.remove("hidden");
+  if (authStatusEl) authStatusEl.textContent = statusMessage;
+  if (!i18nReady) await initI18n(getBrowserPreferredLanguage());
+  await translateStaticUi();
+  authVerifyCodeInput?.focus();
+}
+
 /** Schede Login / Registrati sulla schermata auth. */
 function setAuthMode(mode) {
   ui.authMode = mode;
+  hideVerifyCodeUI();
+  authTabsEl?.classList.remove("hidden");
   authLoginTabBtn.classList.toggle("active", mode === "login");
   authRegisterTabBtn.classList.toggle("active", mode === "register");
   authLoginForm.classList.toggle("hidden", mode !== "login");
   authRegisterForm.classList.toggle("hidden", mode !== "register");
+  authResendWrap?.classList.add("hidden");
   if (authStatusEl) authStatusEl.textContent = "";
 }
 
@@ -700,6 +733,13 @@ function setAuthMode(mode) {
 function showAuthView(message = "") {
   authViewEl.classList.remove("hidden");
   appShellEl.classList.add("hidden");
+  hideVerifyCodeUI();
+  authTabsEl?.classList.remove("hidden");
+  authLoginTabBtn.classList.toggle("active", ui.authMode === "login");
+  authRegisterTabBtn.classList.toggle("active", ui.authMode === "register");
+  authLoginForm.classList.toggle("hidden", ui.authMode !== "login");
+  authRegisterForm.classList.toggle("hidden", ui.authMode !== "register");
+  authResendWrap?.classList.add("hidden");
   if (authStatusEl) authStatusEl.textContent = message;
 }
 
@@ -1711,6 +1751,41 @@ authLoginForm.addEventListener("submit", async (event) => {
       body: JSON.stringify({ email, password })
     });
     authLoginForm.reset();
+    authResendWrap?.classList.add("hidden");
+    await loadAppData();
+    showAppView();
+    scheduleTrendChartDraw();
+  } catch (error) {
+    if (error.code === "email_not_verified") {
+      authViewEl.classList.remove("hidden");
+      appShellEl.classList.add("hidden");
+      if (!i18nReady) await initI18n(getBrowserPreferredLanguage());
+      await openVerifyCodeStep(email, t("auth.emailNotVerified"));
+    } else {
+      showAuthView(error.message);
+    }
+  }
+});
+
+/** Registrazione: crea account senza sessione; email con codice numerico se SMTP è configurato. */
+authRegisterForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const email = document.getElementById("auth-register-email").value.trim();
+  const password = document.getElementById("auth-register-password").value;
+  try {
+    const data = await apiRequest("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ email, password })
+    });
+    authRegisterForm.reset();
+    if (data.needsVerification) {
+      if (!i18nReady) await initI18n(getBrowserPreferredLanguage());
+      const tail = data.verificationEmailSent === false ? ` ${t("auth.verifyEmailNotSent")}` : "";
+      authViewEl.classList.remove("hidden");
+      appShellEl.classList.add("hidden");
+      await openVerifyCodeStep(email, `${t("auth.verifyEmailSent")}${tail}`);
+      return;
+    }
     await loadAppData();
     showAppView();
     scheduleTrendChartDraw();
@@ -1719,22 +1794,50 @@ authLoginForm.addEventListener("submit", async (event) => {
   }
 });
 
-/** Registrazione: POST crea utente e sessione autenticata lato server; il client prosegue come dopo login (`loadAppData`, `showAppView`). */
-authRegisterForm.addEventListener("submit", async (event) => {
+authVerifyCodeForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const email = document.getElementById("auth-register-email").value.trim();
-  const password = document.getElementById("auth-register-password").value;
+  const email = authVerifyEmailHidden?.value?.trim() ?? "";
+  const code = authVerifyCodeInput?.value?.trim() ?? "";
   try {
-    await apiRequest("/api/auth/register", {
+    await apiRequest("/api/auth/verify-code", {
       method: "POST",
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, code })
     });
-    authRegisterForm.reset();
+    hideVerifyCodeUI();
+    authTabsEl?.classList.remove("hidden");
+    authResendWrap?.classList.add("hidden");
     await loadAppData();
     showAppView();
     scheduleTrendChartDraw();
+  } catch {
+    if (authStatusEl) authStatusEl.textContent = t("auth.verifyWrongCode");
+  }
+});
+
+authVerifyBackBtn?.addEventListener("click", () => {
+  const email = authVerifyEmailHidden?.value?.trim() ?? "";
+  setAuthMode("login");
+  const loginEmail = document.getElementById("auth-login-email");
+  if (loginEmail && email) loginEmail.value = email;
+});
+
+authResendBtn?.addEventListener("click", async () => {
+  const onVerifyStep = authVerifyWrap && !authVerifyWrap.classList.contains("hidden");
+  const email = onVerifyStep
+    ? authVerifyEmailHidden?.value?.trim() ?? ""
+    : document.getElementById("auth-login-email")?.value.trim() ?? "";
+  if (!email) {
+    if (authStatusEl) authStatusEl.textContent = t("auth.resendNeedEmail");
+    return;
+  }
+  try {
+    await apiRequest("/api/auth/resend-verification", {
+      method: "POST",
+      body: JSON.stringify({ email })
+    });
+    if (authStatusEl) authStatusEl.textContent = t("auth.resendSent");
   } catch (error) {
-    showAuthView(error.message);
+    if (authStatusEl) authStatusEl.textContent = error.message;
   }
 });
 
@@ -1935,6 +2038,8 @@ async function initializeApp() {
     showAppView();
     scheduleTrendChartDraw();
   } catch {
+    if (!i18nReady) await initI18n(getBrowserPreferredLanguage());
+    await translateStaticUi();
     showAuthView();
     setAuthMode("login");
   }

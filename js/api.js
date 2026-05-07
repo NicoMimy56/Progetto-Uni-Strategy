@@ -32,10 +32,12 @@ export async function apiRequest(path, options = {}) {
   const contentType = response.headers.get("content-type") || "";
   if (!response.ok) {
     let message = "Request failed";
+    let code;
     try {
       if (contentType.includes("application/json")) {
         const body = await response.json();
         message = body.error || message;
+        if (body.code) code = body.code;
       } else {
         const bodyText = await response.text();
         if (bodyText.startsWith("<!doctype") || bodyText.startsWith("<html")) {
@@ -45,7 +47,9 @@ export async function apiRequest(path, options = {}) {
     } catch {
       /* Risposta non leggibile come testo (corpo assente, stream interrotto, ecc.): si mantiene `message` iniziale. */
     }
-    throw new Error(message);
+    const err = new Error(message);
+    if (code) err.code = code;
+    throw err;
   }
   if (response.status === 204) return null;
   if (!contentType.includes("application/json")) {
