@@ -47,6 +47,16 @@ const { sendFeatureRequestMail } = require("./featureRequestMail");
  * Registra tutte le route sull'istanza Express passata dall'esterno.
  * @param {import("express").Express} app
  */
+/**
+ * Compatibilita` stato esame: unifica il vecchio valore `In Preparation` nel nuovo unico bucket `To Take`.
+ * In questo modo payload legacy/client vecchi non rompono validazione API e vengono salvati normalizzati.
+ */
+function normalizeExamStatusInput(rawStatus) {
+  const status = String(rawStatus || "").trim();
+  if (status === "In Preparation") return "To Take";
+  return status;
+}
+
 function registerApiRoutes(app) {
   /* ---------------------------------------------------------------------------
    * POST /api/auth/register
@@ -171,15 +181,16 @@ function registerApiRoutes(app) {
 
   /* ---------------------------------------------------------------------------
    * CRUD exams — sempre vincolate a req.user.id
-   * POST: stato deve essere uno dei tre ENUM; se Completed serve `grade` numerico finito.
+   * POST: stato deve essere `To Take` o `Completed` (legacy `In Preparation` normalizzato a `To Take`); se Completed serve `grade` numerico finito.
    * PUT: stesse regole; 404 se id non esiste o non appartiene all'utente.
    * --------------------------------------------------------------------------- */
   app.post("/api/exams", requireAuth, (req, res) => {
-    const { subject, credits, grade, examDate, status } = req.body;
+    const { subject, credits, grade, examDate } = req.body;
+    const status = normalizeExamStatusInput(req.body.status);
     if (!subject || !Number.isFinite(credits) || credits <= 0) {
       return res.status(400).json({ error: "Invalid subject or credits." });
     }
-    if (!["To Take", "In Preparation", "Completed"].includes(status)) {
+    if (!["To Take", "Completed"].includes(status)) {
       return res.status(400).json({ error: "Invalid exam status." });
     }
 
@@ -214,7 +225,7 @@ function registerApiRoutes(app) {
     }
 
     const credits = Number(req.body.credits);
-    const status = String(req.body.status || "");
+    const status = normalizeExamStatusInput(req.body.status);
     const examDate = req.body.examDate ? String(req.body.examDate) : null;
     const gradeInput = req.body.grade;
     const parsedGrade = gradeInput === null || gradeInput === "" ? null : Number(gradeInput);
@@ -222,7 +233,7 @@ function registerApiRoutes(app) {
     if (!Number.isFinite(credits) || credits <= 0) {
       return res.status(400).json({ error: "Invalid credits." });
     }
-    if (!["To Take", "In Preparation", "Completed"].includes(status)) {
+    if (!["To Take", "Completed"].includes(status)) {
       return res.status(400).json({ error: "Invalid exam status." });
     }
     if (status === "Completed" && !Number.isFinite(parsedGrade)) {

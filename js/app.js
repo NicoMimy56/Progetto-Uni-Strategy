@@ -310,7 +310,6 @@ async function translateStaticUi() {
   });
   const statusMap = {
     "To Take": "status.toTake",
-    "In Preparation": "status.inPrep",
     Completed: "status.completed"
   };
   examStatusInput.querySelectorAll("option").forEach((option) => {
@@ -326,24 +325,23 @@ async function translateStaticUi() {
 function formatExamStatus(raw) {
   const map = {
     "To Take": "status.toTake",
-    "In Preparation": "status.inPrep",
     Completed: "status.completed"
   };
   const key = map[raw];
   return key ? t(key) : raw;
 }
 
-/** Allinea valori legacy o tradotti agli enum API: To Take | In Preparation | Completed */
+/** Allinea valori legacy o tradotti agli enum API correnti: To Take | Completed. */
 function normalizeExamStatus(rawStatus) {
   const normalizedMap = {
     "status.toTake": "To Take",
-    "status.inPrep": "In Preparation",
+    "status.inPrep": "To Take",
     "status.completed": "Completed",
     "Da sostenere": "To Take",
-    "In preparazione": "In Preparation",
+    "In preparazione": "To Take",
     Completato: "Completed",
     "To take": "To Take",
-    "In preparation": "In Preparation",
+    "In preparation": "To Take",
     Completed: "Completed"
   };
   return normalizedMap[rawStatus] || rawStatus;
@@ -1149,7 +1147,6 @@ function render() {
         <td class="exam-edit-cell exam-edit-status-cell">
           <select class="exam-edit-status row-field">
             <option value="To Take">${t("status.toTake")}</option>
-            <option value="In Preparation">${t("status.inPrep")}</option>
             <option value="Completed">${t("status.completed")}</option>
           </select>
         </td>
@@ -1161,7 +1158,7 @@ function render() {
       `;
       const statusSelect = tr.querySelector(".exam-edit-status");
       if (statusSelect) {
-        statusSelect.value = exam.status;
+        statusSelect.value = normalizeExamStatus(exam.status);
       }
       syncExamEditGradeInput(tr);
     } else {
@@ -1427,7 +1424,7 @@ examTableBody.addEventListener("click", async (event) => {
     const rawGrade = gradeValue === "" ? null : Number(gradeValue);
     const grade = status === "Completed" ? rawGrade : null;
     if (!Number.isFinite(credits) || credits <= 0) return;
-    if (!["To Take", "In Preparation", "Completed"].includes(status)) return;
+    if (!["To Take", "Completed"].includes(status)) return;
     if (status === "Completed" && !Number.isFinite(grade)) return;
     try {
       const updated = await apiRequest(`/api/exams/${id}`, {
