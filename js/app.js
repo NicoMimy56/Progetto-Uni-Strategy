@@ -1341,7 +1341,7 @@ function render() {
   totalCreditsEl.textContent = String(total);
   remainingCreditsEl.textContent = String(remaining);
   creditsPercentageEl.textContent = `${percentage.toFixed(0)}%`;
-  creditsChartEl.style.background = `conic-gradient(#22c55e ${degree}deg, var(--muted) ${degree}deg 360deg)`;
+  creditsChartEl.style.background = `conic-gradient(var(--credits-ring-acquired) ${degree}deg, var(--credits-ring-remaining) ${degree}deg 360deg)`;
 
   /**
    * «Obiettivo media» (campo Home): se `targetGpa` > 0, calcola la media aritmetica minima sulle CFU residue

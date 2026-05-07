@@ -23,6 +23,18 @@
   --text: #10233e;
   --muted: #5a6c83;
   --border: #d9e1eb;
+  /* Donut CFU Home: colori dedicati così testo centro e fette restano leggibili su ogni tema */
+  --credits-ring-acquired: #16a34a;
+  --credits-ring-remaining: #d6dce5;
+  --credits-donut-inner-bg: #ffffff;
+  --credits-donut-text: #0f172a;
+}
+
+html.theme-dark {
+  --credits-ring-acquired: #4ade80;
+  --credits-ring-remaining: #52525b;
+  --credits-donut-inner-bg: #121216;
+  --credits-donut-text: #f7fee7;
 }
 
 body {
@@ -496,7 +508,10 @@ button {
   flex: 0 0 180px;
   aspect-ratio: 1 / 1;
   border-radius: 50%;
-  background: conic-gradient(#22c55e 0deg, #d6dce5 0deg);
+  background: conic-gradient(
+    var(--credits-ring-acquired) 0deg,
+    var(--credits-ring-remaining) 0deg
+  );
   display: grid;
   place-items: center;
 }
@@ -506,11 +521,24 @@ button {
   height: 118px;
   aspect-ratio: 1 / 1;
   border-radius: 50%;
-  background: #fff;
+  background: var(--credits-donut-inner-bg);
   display: grid;
   place-items: center;
-  font-size: 1.1rem;
-  font-weight: 700;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+#credits-percentage {
+  margin: 0;
+  font-size: 1.42rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--credits-donut-text);
+}
+
+html.theme-dark #credits-percentage {
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.9), 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
 .credits-legend {
@@ -529,11 +557,11 @@ button {
 }
 
 .dot.done {
-  background: #22c55e;
+  background: var(--credits-ring-acquired);
 }
 
 .dot.left {
-  background: #d6dce5;
+  background: var(--credits-ring-remaining);
 }
 
 .simulator-result {
