@@ -320,6 +320,28 @@ function getNoSessionLabel() {
   return t("study.noSession");
 }
 
+/**
+ * Lingua preferita del browser normalizzata ai codici app (`it`, `en`, ...).
+ * Esempio: `en-US` -> `en`. Fallback: lingua di DEFAULT_PROFILE.
+ */
+function getBrowserPreferredLanguage() {
+  const browserCandidates = [
+    ...(Array.isArray(navigator.languages) ? navigator.languages : []),
+    navigator.language
+  ]
+    .filter((lng) => typeof lng === "string" && lng.trim() !== "")
+    .map((lng) => lng.toLowerCase());
+
+  for (const lang of browserCandidates) {
+    const base = lang.split("-")[0];
+    if (SUPPORTED_LANGUAGES.includes(base)) {
+      return base;
+    }
+  }
+
+  return DEFAULT_PROFILE.language;
+}
+
 /** Aggiorna testi statici marcati data-i18n e le option dei select dipendenti dalla lingua. */
 async function translateStaticUi() {
   document.querySelectorAll("[data-i18n]").forEach((el) => {
@@ -1862,6 +1884,7 @@ syncGradeInputByStatus();
 async function loadAppData() {
   /* Nuovo dataset server ⇒ niente bozza Impostazioni incoerente col profilo appena caricato. */
   settingsDraftProfile = null;
+  const browserPreferredLanguage = getBrowserPreferredLanguage();
   const data = await apiRequest("/api/bootstrap");
   state.exams = (data.exams || []).map((exam) => ({
     ...exam,
@@ -1878,8 +1901,10 @@ async function loadAppData() {
   }));
   state.targetGpa = Number.isFinite(data.targetGpa) ? data.targetGpa : 0;
   state.profile = data.profile ? { ...DEFAULT_PROFILE, ...data.profile } : { ...DEFAULT_PROFILE };
-  if (!SUPPORTED_LANGUAGES.includes(state.profile.language)) {
-    state.profile.language = DEFAULT_PROFILE.language;
+  if (!data.profile?.language) {
+    state.profile.language = browserPreferredLanguage;
+  } else if (!SUPPORTED_LANGUAGES.includes(state.profile.language)) {
+    state.profile.language = browserPreferredLanguage;
   }
   if (!i18nReady) await initI18n(state.profile.language);
   else await i18next.changeLanguage(state.profile.language);

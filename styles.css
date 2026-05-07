@@ -70,17 +70,79 @@ body {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 1rem;
+  padding: 1.2rem;
+  background:
+    radial-gradient(circle at 12% 14%, color-mix(in srgb, var(--primary) 14%, transparent) 0, transparent 34%),
+    radial-gradient(circle at 86% 86%, color-mix(in srgb, var(--primary-dark) 18%, transparent) 0, transparent 36%),
+    linear-gradient(145deg, color-mix(in srgb, var(--bg) 84%, white), var(--bg));
+}
+
+.auth-layout {
+  width: min(960px, 100%);
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(320px, 420px);
+  gap: 1.2rem;
+  align-items: center;
+}
+
+.auth-hero {
+  color: color-mix(in srgb, var(--text) 88%, #0b1220);
+}
+
+.auth-kicker {
+  margin: 0 0 0.5rem;
+  display: inline-flex;
+  padding: 0.34rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--primary-dark);
+  background: color-mix(in srgb, var(--primary) 12%, white);
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, white);
+}
+
+.auth-hero h1 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.3vw, 2.1rem);
+  line-height: 1.18;
+}
+
+.auth-hero-copy {
+  margin: 0.72rem 0 0;
+  color: var(--muted);
+  max-width: 46ch;
+  line-height: 1.45;
+}
+
+.auth-highlights {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.auth-highlights span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  color: color-mix(in srgb, var(--primary-dark) 78%, var(--text));
+  background: color-mix(in srgb, var(--card-bg) 78%, var(--primary) 10%);
+  border: 1px solid color-mix(in srgb, var(--primary) 20%, var(--border));
 }
 
 .auth-card {
   width: 100%;
-  max-width: 420px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 1rem;
-  box-shadow: 0 8px 28px rgba(15, 47, 111, 0.12);
+  max-width: 440px;
+  background: color-mix(in srgb, var(--card-bg) 92%, white);
+  border: 1px solid color-mix(in srgb, var(--border) 85%, white);
+  border-radius: 18px;
+  padding: 1.1rem;
+  backdrop-filter: blur(7px);
+  box-shadow: 0 16px 42px rgba(15, 47, 111, 0.15);
 }
 
 .auth-card h1 {
@@ -90,6 +152,11 @@ body {
 .auth-card p {
   margin: 0 0 0.8rem;
   color: var(--muted);
+}
+
+.auth-card .brand-logo {
+  width: 32px;
+  height: 32px;
 }
 
 .auth-tabs {
@@ -118,6 +185,26 @@ body {
   margin-top: 0.7rem !important;
   min-height: 1rem;
   color: #b91c1c !important;
+}
+
+@media (max-width: 760px) {
+  .auth-layout {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+    max-width: 440px;
+  }
+
+  .auth-hero {
+    text-align: center;
+  }
+
+  .auth-hero-copy {
+    margin-inline: auto;
+  }
+
+  .auth-highlights {
+    justify-content: center;
+  }
 }
 
 .topbar p {

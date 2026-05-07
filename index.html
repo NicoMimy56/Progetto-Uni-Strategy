@@ -24,27 +24,45 @@
   <body>
     <!-- Schermata autenticazione (prima caricata se non sei loggato) -->
     <section id="auth-view" class="auth-view">
-      <div class="auth-card">
-        <h1 class="brand-title">
-          <img src="./assets/logo-header-classic.svg" alt="" class="brand-logo" />
-          <span>Uni-Strategy</span>
-        </h1>
-        <p>Accedi per vedere solo i tuoi dati.</p>
-        <div class="auth-tabs">
-          <button id="auth-login-tab" class="auth-tab-btn active" type="button">Login</button>
-          <button id="auth-register-tab" class="auth-tab-btn" type="button">Registrati</button>
+      <div class="auth-layout">
+        <div class="auth-hero">
+          <p class="auth-kicker">Dashboard universitaria smart</p>
+          <h1>
+            Organizza esami, piano studio e obiettivi in un solo spazio.
+          </h1>
+          <p class="auth-hero-copy">
+            Uni-Strategy ti aiuta a tenere sotto controllo la tua carriera con
+            una vista chiara dei progressi, direttamente dal primo accesso.
+          </p>
+          <div class="auth-highlights" aria-hidden="true">
+            <span>Media e trend</span>
+            <span>CFU monitorati</span>
+            <span>Sessioni settimanali</span>
+          </div>
         </div>
-        <form id="auth-login-form" class="auth-form">
-          <label>Email<input id="auth-login-email" type="email" required /></label>
-          <label>Password<input id="auth-login-password" type="password" minlength="6" required /></label>
-          <button type="submit">Accedi</button>
-        </form>
-        <form id="auth-register-form" class="auth-form hidden">
-          <label>Email<input id="auth-register-email" type="email" required /></label>
-          <label>Password<input id="auth-register-password" type="password" minlength="6" required /></label>
-          <button type="submit">Crea account</button>
-        </form>
-        <p id="auth-status" class="auth-status"></p>
+
+        <div class="auth-card">
+          <h1 class="brand-title">
+            <img src="./assets/logo-header-classic.svg" alt="" class="brand-logo" />
+            <span>Uni-Strategy</span>
+          </h1>
+          <p>Accedi per vedere solo i tuoi dati.</p>
+          <div class="auth-tabs">
+            <button id="auth-login-tab" class="auth-tab-btn active" type="button">Login</button>
+            <button id="auth-register-tab" class="auth-tab-btn" type="button">Registrati</button>
+          </div>
+          <form id="auth-login-form" class="auth-form">
+            <label>Email<input id="auth-login-email" type="email" required /></label>
+            <label>Password<input id="auth-login-password" type="password" minlength="6" required /></label>
+            <button type="submit">Accedi</button>
+          </form>
+          <form id="auth-register-form" class="auth-form hidden">
+            <label>Email<input id="auth-register-email" type="email" required /></label>
+            <label>Password<input id="auth-register-password" type="password" minlength="6" required /></label>
+            <button type="submit">Crea account</button>
+          </form>
+          <p id="auth-status" class="auth-status"></p>
+        </div>
       </div>
     </section>
 
