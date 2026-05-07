@@ -122,9 +122,59 @@
           <section class="card full-width">
             <div class="table-head">
               <h2 data-i18n="home.examsTitle">Esami</h2>
-              <div class="list-filters">
-                <button id="home-show-pending" class="small-filter-btn active" type="button">Da sostenere</button>
-                <button id="home-show-completed" class="small-filter-btn" type="button">Completati</button>
+              <!-- Ordinamento completati: chip in `render()` + stato `homeCompletedSort` (delegation click in app.js) -->
+              <div class="home-exams-toolbar">
+                <div class="list-filters">
+                  <button id="home-show-pending" class="small-filter-btn active" type="button">Da sostenere</button>
+                  <button id="home-show-completed" class="small-filter-btn" type="button">Completati</button>
+                </div>
+                <div
+                  id="home-completed-sort-wrap"
+                  class="home-completed-sort-row hidden"
+                  role="group"
+                >
+                  <span class="home-completed-sort-hint">
+                    <span data-i18n="home.sortLabel">Ordina</span>
+                  </span>
+                  <div class="home-sort-segments" role="presentation">
+                    <button
+                      type="button"
+                      class="home-sort-segment"
+                      data-home-sort="dateAsc"
+                      data-i18n="home.sortChipDateAsc"
+                      aria-pressed="false"
+                    >
+                      Cronologia
+                    </button>
+                    <button
+                      type="button"
+                      class="home-sort-segment"
+                      data-home-sort="dateDesc"
+                      data-i18n="home.sortChipDateDesc"
+                      aria-pressed="false"
+                    >
+                      Recenti
+                    </button>
+                    <button
+                      type="button"
+                      class="home-sort-segment"
+                      data-home-sort="gradeDesc"
+                      data-i18n="home.sortChipGradeDesc"
+                      aria-pressed="false"
+                    >
+                      Voto alto
+                    </button>
+                    <button
+                      type="button"
+                      class="home-sort-segment"
+                      data-home-sort="gradeAsc"
+                      data-i18n="home.sortChipGradeAsc"
+                      aria-pressed="false"
+                    >
+                      Voto basso
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
             <table>
@@ -342,6 +392,37 @@
           </section>
 
           <section class="card settings-mini-card">
+            <h3 class="settings-card-title" data-i18n="settings.langTitle">Lingua</h3>
+            <p class="settings-card-hint" data-i18n="settings.langHint"></p>
+            <div class="settings-tiles settings-tiles-lang" role="group">
+              <button type="button" class="settings-tile settings-tile-lang" data-settings-lang="it">
+                <span class="lang-flag">IT</span>
+                <span data-i18n="settings.langIt">IT</span>
+              </button>
+              <button type="button" class="settings-tile settings-tile-lang" data-settings-lang="en">
+                <span class="lang-flag">EN</span>
+                <span data-i18n="settings.langEn">EN</span>
+              </button>
+              <button type="button" class="settings-tile settings-tile-lang" data-settings-lang="fr">
+                <span class="lang-flag">FR</span>
+                <span data-i18n="settings.langFr">FR</span>
+              </button>
+              <button type="button" class="settings-tile settings-tile-lang" data-settings-lang="de">
+                <span class="lang-flag">DE</span>
+                <span data-i18n="settings.langDe">DE</span>
+              </button>
+              <button type="button" class="settings-tile settings-tile-lang" data-settings-lang="ro">
+                <span class="lang-flag">RO</span>
+                <span data-i18n="settings.langRo">RO</span>
+              </button>
+              <button type="button" class="settings-tile settings-tile-lang" data-settings-lang="es">
+                <span class="lang-flag">ES</span>
+                <span data-i18n="settings.langEs">ES</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="card settings-mini-card">
             <h3 class="settings-card-title" data-i18n="settings.courseTitle">Percorso</h3>
             <p class="settings-card-hint" data-i18n="settings.courseHint"></p>
             <div class="settings-tiles" role="group">
@@ -415,37 +496,6 @@
               </button>
             </div>
           </section>
-
-          <section class="card settings-mini-card">
-            <h3 class="settings-card-title" data-i18n="settings.langTitle">Lingua</h3>
-            <p class="settings-card-hint" data-i18n="settings.langHint"></p>
-            <div class="settings-tiles settings-tiles-lang" role="group">
-              <button type="button" class="settings-tile settings-tile-lang" data-settings-lang="it">
-                <span class="lang-flag">IT</span>
-                <span data-i18n="settings.langIt">IT</span>
-              </button>
-              <button type="button" class="settings-tile settings-tile-lang" data-settings-lang="en">
-                <span class="lang-flag">EN</span>
-                <span data-i18n="settings.langEn">EN</span>
-              </button>
-              <button type="button" class="settings-tile settings-tile-lang" data-settings-lang="fr">
-                <span class="lang-flag">FR</span>
-                <span data-i18n="settings.langFr">FR</span>
-              </button>
-              <button type="button" class="settings-tile settings-tile-lang" data-settings-lang="de">
-                <span class="lang-flag">DE</span>
-                <span data-i18n="settings.langDe">DE</span>
-              </button>
-              <button type="button" class="settings-tile settings-tile-lang" data-settings-lang="ro">
-                <span class="lang-flag">RO</span>
-                <span data-i18n="settings.langRo">RO</span>
-              </button>
-              <button type="button" class="settings-tile settings-tile-lang" data-settings-lang="es">
-                <span class="lang-flag">ES</span>
-                <span data-i18n="settings.langEs">ES</span>
-              </button>
-            </div>
-          </section>
         </div>
       </section>
       </main>
@@ -456,6 +506,6 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
     <!-- Client modulare ES2020: vedi cartella `js/` (constants, store, dom, api, academic + app.js) -->
-    <script type="module" src="./js/app.js?v=2026-05-06-14"></script>
+    <script type="module" src="./js/app.js?v=2026-05-06-19"></script>
   </body>
 </html>

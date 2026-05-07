@@ -59,9 +59,12 @@ export const clearStudyBtn = document.getElementById("clear-study-btn");
 export const tabButtons = document.querySelectorAll(".tab-btn");
 export const tabContents = document.querySelectorAll(".tab-content");
 
-/* --- Filtri tabella esami Home (Da sostenere / Completati) --- */
+/*
+ * Home — tabella esami compatta: filtri pending/completed + (solo completati) gruppo chip ordinamento `[data-home-sort]`.
+ */
 export const homeShowPendingBtn = document.getElementById("home-show-pending");
 export const homeShowCompletedBtn = document.getElementById("home-show-completed");
+export const homeCompletedSortWrap = document.getElementById("home-completed-sort-wrap");
 
 /* --- Form "nuovo esame": voto, stato, data (flatpickr incollato su examDateInput) --- */
 export const examGradeInput = document.getElementById("grade");

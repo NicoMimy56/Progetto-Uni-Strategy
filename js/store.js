@@ -21,7 +21,8 @@ import { DEFAULT_PROFILE } from "./constants.js";
  * @property {Array<object>} simulatedExams righe simulatore
  * @property {number} targetGpa obiettivo media /30 (0 = non impostato)
  * @property {object} profile vedi DEFAULT_PROFILE + campi server
- * @property {"pending"|"completed"} homeExamFilter filtra tabella esami Home
+ * @property {"pending"|"completed"} homeExamFilter filtra la tabella compatta esami in Home (da sostenere vs completati)
+ * @property {"dateAsc"|"dateDesc"|"gradeDesc"|"gradeAsc"} homeCompletedSort ordine righe **solo** se `homeExamFilter === "completed"`; scelto dai chip `[data-home-sort]`, non persistito sul server
  * @property {number|null} editingExamId id esame in modifica inline in Gestione, o null
  */
 export const state = {
@@ -31,6 +32,7 @@ export const state = {
   targetGpa: 0,
   profile: { ...DEFAULT_PROFILE },
   homeExamFilter: "pending",
+  homeCompletedSort: "dateAsc",
   editingExamId: null
 };
 

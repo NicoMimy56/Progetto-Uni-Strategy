@@ -63,6 +63,7 @@ import {
   tabContents,
   homeShowPendingBtn,
   homeShowCompletedBtn,
+  homeCompletedSortWrap,
   examGradeInput,
   examStatusInput,
   examDateInput,
@@ -108,6 +109,8 @@ import { weightedGpa, simulatedGpa, daysRemaining } from "./academic.js";
 //
 // | Sezione codice                         | Responsabilità principale |
 // |---------------------------------------|---------------------------|
+// | settingsDraft*, getProfileForUi       | Bozza Impostazioni vs profilo salvato; tab discard/save |
+// | compareCompletedBy* …                 | Ordinamento tabella Home → filtro «Completati» |
 // | applyTheme … setDegreeFromTile        | Variabili CSS + tile Impostazioni |
 // | initI18n, t, translateStaticUi …      | Lingue / testi DOM / stato esame tradotto |
 // | picker esame + studio                 | Flatpickr, analog clock popover HH:MM |
@@ -122,8 +125,10 @@ import { weightedGpa, simulatedGpa, daysRemaining } from "./academic.js";
 // =============================================================================
 
 /**
- * Applica una palette (da THEME_PRESETS) alle variabili CSS globali.
- * @param {typeof import("./constants.js").THEME_PRESETS.classic} theme
+ * Applica una palette (da THEME_PRESETS) alle variabili CSS globali (`--primary`, `--bg`, …).
+ * Aggiunge/rimuove `html.theme-dark` in base al **preset nome** letto da `getProfileForUi()` così la bozza Impostazioni
+ * aggiorna subito classe scura anche se `state.profile` non è ancora salvato sul server.
+ * @param {typeof import("./constants.js").THEME_PRESETS.classic} theme oggetto colori derivato dal preset selezionato
  */
 function applyTheme(theme) {
   const root = document.documentElement;
@@ -153,7 +158,10 @@ function getDefaultCfuByPath(path) {
   return getProfileForUi().totalCfu || 180;
 }
 
-/** Sincronizza input numerici e stato "active" delle tile in tab Impostazioni (bozza o profilo salvato). */
+/**
+ * Allinea input `#total-cfu-input` / `#graduation-target-input` e classe `.active` sulle tile dentro `#settings-tab`
+ * usando `getProfileForUi()` (bozza o profilo dopo discard). Early return se `#settings-tab` assente nel DOM di test.
+ */
 function syncProfileInputs() {
   if (!settingsTabEl) return;
   const p = getProfileForUi();
@@ -184,12 +192,20 @@ let i18nReady = false;
  */
 let settingsDraftProfile = null;
 
-/** Profilo osservabile per tema, lingua locale picker e tile Impostazioni (boza o profilo salvato). */
+/**
+ * Oggetto profilo da cui leggere tema, lingua, tile CFU mentre l’utente modifica Impostazioni.
+ * Con bozza attiva (`settingsDraftProfile`) le modifiche **non** aggiornano `state.profile` finché non si salva;
+ * così KPI e altre tab continuano a usare i valori confermati. Senza bozza torna sempre `state.profile`.
+ * @returns {object} snapshot profilo (stessa forma di `state.profile` / `DEFAULT_PROFILE`)
+ */
 function getProfileForUi() {
   return settingsDraftProfile !== null ? settingsDraftProfile : state.profile;
 }
 
-/** Ripristina tema, i18n e input dal profilo committato (`state.profile`). */
+/**
+ * Abbandono tab Impostazioni senza salvataggio: scarta la bozza e riporta interfaccia tema/lingua/form
+ * allo stato **committato** (`state.profile`). Usato dalla navigazione tab prima di montare la nuova sezione.
+ */
 async function discardSettingsDraft() {
   if (settingsDraftProfile === null) return;
   settingsDraftProfile = null;
@@ -207,7 +223,11 @@ async function discardSettingsDraft() {
   }
 }
 
-/** All’ingresso nel tab Impostazioni: snapshot del profilo server per modifiche non persistenti fino a Salva. */
+/**
+ * Chiamato **solo** quando si entra nel tab Impostazioni da un altro tab (`!wasOnSettings`).
+ * Copia superficiale `state.profile` → `settingsDraftProfile`: da qui le tile e gli input modificano la bozza.
+ * Se si ri-clicca «Impostazioni» restandoci sopra non si reinizializza (evita perdere modifiche non salvate).
+ */
 function startSettingsDraft() {
   settingsDraftProfile = { ...state.profile };
   syncProfileInputs();
@@ -661,6 +681,83 @@ function setDeviceMode() {
   document.body.classList.toggle("device-desktop", !isMobile);
 }
 
+// ---------------------------------------------------------------------------
+// Home — ordinamenti tabella Esami (#upcoming-table-body)
+//
+// - **Da sostenere** (non Completed): sempre `comparePendingExamsClosestFirst` (nessuna scelta utente): ordine è
+//   priorità alla data nell’assieme “quanto manca allo scadere” usando `daysRemaining` (coerenza con la colonna Giorni):
+//   giorni più piccoli (anche negativi = passati) prima, poi elenco alfabetico se pari giorno.
+// - **Completati**: comparators più sotto solo dopo `.filter(Completed)`, `state.homeCompletedSort` sugli chip.
+//
+// Regole comuni liste completate per data/voto: senza data/voto verso fondo del criterio; tie-break sempre materia (`compareExamSubjectStable`).
+// ---------------------------------------------------------------------------
+
+/** Tie-break alfabetico su `subject`: evita ordine oscillante quando data o voto coincidono. */
+function compareExamSubjectStable(a, b) {
+  return String(a.subject || "").localeCompare(String(b.subject || ""), undefined, { sensitivity: "base" });
+}
+
+/** Voto `/30` come numero o `null` se mancante / non numerico (`grade` può essere assente nei completati). */
+function getExamGradeNullable(exam) {
+  const g = exam.grade;
+  return g != null && Number.isFinite(Number(g)) ? Number(g) : null;
+}
+
+/** Chiave ordinamento “vicinanza”: esami senza data efficaci vanno sempre **dopo** quelli calendarizzati. */
+function pendingExamProximitySortKey(exam) {
+  if (!exam.examDate) return Number.POSITIVE_INFINITY;
+  const dr = daysRemaining(exam.examDate);
+  if (dr === "-") return Number.POSITIVE_INFINITY;
+  return Number(dr);
+}
+
+/**
+ * Da sostenere: ordine fisso (**non** modificabile dall’utente): dal più urgente cronologicamente.
+ * Usa anche `daysRemaining` come la colonna «Giorni» su Home (↑ scaduti/oggi/imminenti sopra dei lontani, senza data in coda).
+ */
+function comparePendingExamsClosestFirst(a, b) {
+  const ka = pendingExamProximitySortKey(a);
+  const kb = pendingExamProximitySortKey(b);
+  if (ka !== kb) return ka - kb;
+  return compareExamSubjectStable(a, b);
+}
+
+/** Ordine cronologico data esame ascendente (`YYYY-MM-DD` parseabile da `Date`). */
+function compareCompletedByDateAsc(a, b) {
+  if (!a.examDate && !b.examDate) return compareExamSubjectStable(a, b);
+  if (!a.examDate) return 1;
+  if (!b.examDate) return -1;
+  const delta = new Date(a.examDate) - new Date(b.examDate);
+  return delta !== 0 ? delta : compareExamSubjectStable(a, b);
+}
+
+/** Cronologia invertita: esami più recenti in alto. */
+function compareCompletedByDateDesc(a, b) {
+  return compareCompletedByDateAsc(b, a);
+}
+
+/** Migliori voti prima; pari voto ⇒ materia. */
+function compareCompletedByGradeDesc(a, b) {
+  const ga = getExamGradeNullable(a);
+  const gb = getExamGradeNullable(b);
+  if (ga == null && gb == null) return compareCompletedByDateAsc(a, b);
+  if (ga == null) return 1;
+  if (gb == null) return -1;
+  const delta = gb - ga;
+  return delta !== 0 ? delta : compareExamSubjectStable(a, b);
+}
+
+/** Voti più bassi prima (stesse regole «senza voto in coda» di gradeDesc). */
+function compareCompletedByGradeAsc(a, b) {
+  const ga = getExamGradeNullable(a);
+  const gb = getExamGradeNullable(b);
+  if (ga == null && gb == null) return compareCompletedByDateAsc(a, b);
+  if (ga == null) return 1;
+  if (gb == null) return -1;
+  const delta = ga - gb;
+  return delta !== 0 ? delta : compareExamSubjectStable(a, b);
+}
+
 /** Testo colonna giorni sulla Home / Gestione ("Fatto", scaduti, countdown). */
 function formatDaysRemaining(exam) {
   if (exam.status === "Completed") return t("done");
@@ -1020,6 +1117,9 @@ function renderStudyBoard(containerEl, showDeleteButton) {
 /**
  * Punto centrale di repaint: sincronizza KPI, tabelle (home, gestione, simulatore),
  * grafici, calendario e board studio con `state` corrente.
+ *
+ * Accortezze Home tabella esami: filtro `state.homeExamFilter`, ordinamento completati `state.homeCompletedSort` (chip `#home-completed-sort-wrap`),
+ * thead con 4 vs 5 colonne, toolbar ordinamento solo se filtro = completati.
  */
 function render() {
   const language = state.profile.language;
@@ -1082,21 +1182,58 @@ function render() {
   });
   bindExamEditRowInputs();
 
-  /* --- Home — elenco ridotto ordinato per data ascendente con filtro pending vs completed --- */
-  const upcomingExams = exams
-    .filter((e) =>
-      state.homeExamFilter === "completed" ? e.status === "Completed" : e.status !== "Completed"
-    )
-    .sort((a, b) => {
-      if (!a.examDate && !b.examDate) return 0;
-      if (!a.examDate) return 1;
-      if (!b.examDate) return -1;
-      return new Date(a.examDate) - new Date(b.examDate);
-    });
-
+  /* --- Home — tabella compatta esami (`#upcoming-table-body`) --- */
   const isCompletedView = state.homeExamFilter === "completed";
 
-  /** Riscrittura thead: la colonna «Giorni» esiste solo se non sei nel filtro completati */
+  /*
+   * `homeCompletedSort` è impostato dai chip `[data-home-sort]` (solo vista completati). Se il valore fosse alterato nel DOM,
+   * normalizziamo a `dateAsc` per non lasciare uno switch senza caso valido dopo refresh o debug console.
+   */
+  const allowedCompletedSorts = new Set(["dateAsc", "dateDesc", "gradeDesc", "gradeAsc"]);
+  if (!allowedCompletedSorts.has(state.homeCompletedSort)) {
+    state.homeCompletedSort = "dateAsc";
+  }
+
+  /*
+   * Da sostenere: `comparePendingExamsClosestFirst` (dettaglio in intestazione sopra comparatori Home).
+   * Completati: chip `compareCompleted*` e `homeCompletedSort`.
+   */
+  const upcomingExams = exams
+    .filter((e) =>
+      isCompletedView ? e.status === "Completed" : e.status !== "Completed"
+    )
+    .sort((a, b) => {
+      if (isCompletedView) {
+        switch (state.homeCompletedSort) {
+          case "dateDesc":
+            return compareCompletedByDateDesc(a, b);
+          case "gradeDesc":
+            return compareCompletedByGradeDesc(a, b);
+          case "gradeAsc":
+            return compareCompletedByGradeAsc(a, b);
+          case "dateAsc":
+          default:
+            return compareCompletedByDateAsc(a, b);
+        }
+      }
+      return comparePendingExamsClosestFirst(a, b);
+    });
+
+  /* Toolbar ordinamento: chip visibili solo su «Completati»; `aria-pressed` indica scelta corrente (accessibilità). */
+  if (homeCompletedSortWrap) {
+    homeCompletedSortWrap.classList.toggle("hidden", !isCompletedView);
+    homeCompletedSortWrap.setAttribute("aria-label", t("home.sortLabel"));
+    homeCompletedSortWrap.querySelectorAll("[data-home-sort]").forEach((btn) => {
+      const active = btn.dataset.homeSort === state.homeCompletedSort;
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+  }
+
+  /*
+   * Intestazioni colonne mutate a runtime perché vista completati toglie «Giorni» e «Stato» e mostra solo «Voto».
+   * (Prima colonne stato/giorni servono alla pianificazione; nei completati l’informazione prioritaria è il voto.)
+   */
   const upcomingHeaderRow = upcomingTableBody.parentElement.querySelector("thead tr");
   if (upcomingHeaderRow) {
     upcomingHeaderRow.innerHTML = isCompletedView
@@ -1104,7 +1241,7 @@ function render() {
         <th>${t("tableSubject")}</th>
         <th>${t("tableCfu")}</th>
         <th>${t("tableDate")}</th>
-        <th>${t("tableStatus")}</th>
+        <th>${t("tableGrade")}</th>
       `
       : `
         <th>${t("tableSubject")}</th>
@@ -1118,7 +1255,7 @@ function render() {
   if (upcomingExams.length === 0) {
     const emptyRow = document.createElement("tr");
     emptyRow.innerHTML =
-      state.homeExamFilter === "completed"
+      isCompletedView
         ? `<td colspan="4">${t("noneCompleted")}</td>`
         : `<td colspan="5">${t("nonePlanned")}</td>`;
     upcomingTableBody.appendChild(emptyRow);
@@ -1130,7 +1267,9 @@ function render() {
           <td>${exam.subject}</td>
           <td>${exam.credits}</td>
           <td>${exam.examDate || "-"}</td>
-          <td>${formatExamStatus(exam.status)}</td>
+          <td>${
+            exam.grade != null && Number.isFinite(Number(exam.grade)) ? exam.grade : "-"
+          }</td>
         `
         : `
           <td>${exam.subject}</td>
@@ -1143,6 +1282,7 @@ function render() {
     });
   }
 
+  /* Evidenziazione visiva quale filtro Home è attivo (stile `.small-filter-btn.active`). */
   homeShowPendingBtn.classList.toggle("active", state.homeExamFilter === "pending");
   homeShowCompletedBtn.classList.toggle("active", state.homeExamFilter === "completed");
 
@@ -1417,6 +1557,7 @@ clearStudyBtn.addEventListener("click", async () => {
 examStatusInput.addEventListener("change", syncGradeInputByStatus);
 examDateInput.addEventListener("change", applyExamDateStatusRule);
 
+/** Toggle filtro tabella Home: nasconde select ordinamento (`render` riattacca `.hidden`). */
 homeShowPendingBtn.addEventListener("click", () => {
   state.homeExamFilter = "pending";
   render();
@@ -1425,7 +1566,20 @@ homeShowCompletedBtn.addEventListener("click", () => {
   state.homeExamFilter = "completed";
   render();
 });
-/** Impostazioni: quattro gruppi gestiti via event delegation sulla card intera (tile grado/tema/Voto laurea/desired lang) */
+
+/** Ordinamento esami completati: click su uno dei chip `[data-home-sort]` (delegation sul wrapper). */
+homeCompletedSortWrap?.addEventListener("click", (event) => {
+  const btn = event.target.closest("[data-home-sort]");
+  if (!btn || !homeCompletedSortWrap.contains(btn)) return;
+  state.homeCompletedSort = btn.dataset.homeSort || "dateAsc";
+  render();
+});
+
+/**
+ * Impostazioni: event delegation dentro `#settings-tab`.
+ * Aggiorna **solo la bozza** (`getProfileForUi`) per tile grado/tema/lingua; preset voto laurea scrive nell’`<input>`
+ * (persistenza numeri inclusa al click «Salva impostazioni» insieme al resto del profilo).
+ */
 settingsTabEl.addEventListener("click", (event) => {
   const degreeBtn = event.target.closest("[data-settings-degree]");
   if (degreeBtn) {
@@ -1472,6 +1626,10 @@ settingsTabEl.addEventListener("click", (event) => {
  * la bozza diventa una copia del profilo salvato (resti in modalità modifica sullo stesso tab).
  */
 saveSettingsBtn.addEventListener("click", async () => {
+  /*
+   * `startSettingsDraft` di sicurezza: se qualcuno clicca Salva prima che il click tab abbia mai creato la bozza
+   * (edge case tooling), cloniamo comunque il profilo attuale invece di dereferenziare null.
+   */
   if (!settingsDraftProfile) {
     startSettingsDraft();
   }
@@ -1555,12 +1713,20 @@ logoutBtn.addEventListener("click", async () => {
   state.exams = [];
   state.studyPlan = [];
   state.targetGpa = 0;
+  /* Nessuna bozza UI dopo logout — al prossimo login `loadAppData` riparte dal profilo remoto soltanto */
   settingsDraftProfile = null;
   state.profile = { ...DEFAULT_PROFILE };
   showAuthView("Disconnesso.");
 });
 
-/** Tab principali SPA “finta”: mostra/conce sezioni pre-renderizzate in index.html usando class `.active` */
+/**
+ * Tab principali SPA senza routing: toggle `.active` su bottoni nav e `#<id>-tab` corrispondente.
+ *
+ * Eccezione **Impostazioni**:
+ * - uscendo (`leavingSettings`) senza salvare → `discardSettingsDraft()` ripristina tema/lingua/form da server;
+ * - entrando da altro tab → `startSettingsDraft()` fotografa profilo così modifiche successive restano una bozza;
+ * - re-click su Impostazioni da già su Impostazioni **non** resetta bozza (`enteringSettingsFromElsewhere` falso).
+ */
 tabButtons.forEach((button) => {
   button.addEventListener("click", async () => {
     const selectedTab = button.dataset.tab;
@@ -1632,7 +1798,11 @@ clearSimBtn.addEventListener("click", async () => {
   }
 });
 
-/** Richieste di implementazione → DB + tentativo SMTP (variabili d’ambiente sul server). */
+/**
+ * Tab Richieste: POST `/api/feature-requests` (auth obbligatoria).
+ * Il server salva sempre su SQLite; se `FEEDBACK_TO_EMAIL` + SMTP sono configurati risponde `emailed: true`
+ * e il testo sotto form usa stringhe `requests.success*` di conseguenza.
+ */
 featureRequestForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const subject = featureRequestSubject?.value.trim() ?? "";
@@ -1671,6 +1841,7 @@ syncGradeInputByStatus();
  * 7. render() finale mostra stato coerente con server.
  */
 async function loadAppData() {
+  /* Nuovo dataset server ⇒ niente bozza Impostazioni incoerente col profilo appena caricato. */
   settingsDraftProfile = null;
   const data = await apiRequest("/api/bootstrap");
   state.exams = (data.exams || []).map((exam) => ({

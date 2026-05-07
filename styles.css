@@ -448,6 +448,120 @@ button {
   flex-wrap: wrap;
 }
 
+/*
+ * Home — card «Esami»: toolbar destra coi filtri pill; sotto, etichetta sobria + “segment control” ordinamento completati.
+ */
+.home-exams-toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.home-completed-sort-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem 0.65rem;
+  max-width: min(100%, 28rem);
+}
+
+.home-completed-sort-hint {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.9;
+}
+
+.home-sort-segments {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 42%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.home-sort-segment {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  appearance: none;
+  margin: 0;
+  cursor: pointer;
+  border: none;
+  border-radius: 999px;
+  padding: 0.34rem 0.72rem;
+  font-size: 0.71rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--muted);
+  background: transparent;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+
+.home-sort-segment:hover {
+  color: var(--text);
+}
+
+.home-sort-segment:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.home-sort-segment.active {
+  background: var(--card-bg);
+  color: var(--primary);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.08),
+    0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+html.theme-dark .home-sort-segments {
+  background: rgba(255, 255, 255, 0.055);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+html.theme-dark .home-sort-segment.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: color-mix(in srgb, var(--primary) 92%, #fff);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.25),
+    0 0 0 1px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+@media (max-width: 480px) {
+  .home-completed-sort-row {
+    justify-content: flex-start;
+    max-width: 100%;
+    align-self: stretch;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .home-sort-segments {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .home-sort-segment {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    text-align: center;
+    justify-content: center;
+  }
+}
+
 /* Piano studio: titolo e "Svuota piano" allineati in alto + pulsante più compatto */
 #study-tab .table-head {
   align-items: flex-start;
@@ -802,9 +916,9 @@ html.theme-dark .settings-page-warning {
   }
 }
 
+/* Lingue: affiancate finché c’è spazio (min ~4rem), poi riga nuova; le tile si allargano fino al bordo (auto-fit collassa colonne vuote) */
 .settings-tiles-lang {
-  grid-template-columns: repeat(3, minmax(0, 72px));
-  justify-content: start;
+  grid-template-columns: repeat(auto-fit, minmax(4rem, 1fr));
 }
 
 .settings-tile {
@@ -937,9 +1051,11 @@ html.theme-dark .settings-page-warning {
 
 .settings-tile-lang {
   min-height: 64px;
-  min-width: 64px;
-  max-width: 72px;
+  min-width: 0;
+  width: 100%;
+  max-width: none;
   padding: 0.35rem;
+  box-sizing: border-box;
 }
 
 .settings-tile-lang .lang-flag {
