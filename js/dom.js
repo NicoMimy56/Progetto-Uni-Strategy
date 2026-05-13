@@ -90,13 +90,6 @@ export const authLoginTabBtn = document.getElementById("auth-login-tab");
 export const authRegisterTabBtn = document.getElementById("auth-register-tab");
 export const authLoginForm = document.getElementById("auth-login-form");
 export const authRegisterForm = document.getElementById("auth-register-form");
-export const authTabsEl = document.getElementById("auth-tabs");
-export const authVerifyWrap = document.getElementById("auth-verify-wrap");
-export const authVerifyCodeForm = document.getElementById("auth-verify-code-form");
-export const authVerifyEmailHidden = document.getElementById("auth-verify-email-hidden");
-export const authVerifyEmailDisplay = document.getElementById("auth-verify-email-display");
-export const authVerifyCodeInput = document.getElementById("auth-verify-code-input");
-export const authVerifyBackBtn = document.getElementById("auth-verify-back-btn");
 export const logoutBtn = document.getElementById("logout-btn");
 
 /* Tab Richieste / feature request → POST /api/feature-requests */

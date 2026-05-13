@@ -47,7 +47,7 @@
             <span>Uni-Strategy</span>
           </h1>
           <p>Accedi per vedere solo i tuoi dati.</p>
-          <div id="auth-tabs" class="auth-tabs">
+          <div class="auth-tabs">
             <button id="auth-login-tab" class="auth-tab-btn active" type="button">Login</button>
             <button id="auth-register-tab" class="auth-tab-btn" type="button">Registrati</button>
           </div>
@@ -61,33 +61,6 @@
             <label>Password<input id="auth-register-password" type="password" minlength="6" required /></label>
             <button type="submit">Crea account</button>
           </form>
-          <div id="auth-verify-wrap" class="auth-verify-wrap hidden">
-            <p class="auth-verify-intro" data-i18n="auth.verifyCodeIntro">
-              Inserisci il codice a 6 cifre inviato alla tua email.
-            </p>
-            <p id="auth-verify-email-display" class="auth-verify-email-display"></p>
-            <form id="auth-verify-code-form" class="auth-form">
-              <input type="hidden" id="auth-verify-email-hidden" />
-              <label>
-                <span data-i18n="auth.verifyCodeLabel">Codice</span>
-                <input
-                  id="auth-verify-code-input"
-                  type="text"
-                  maxlength="8"
-                  inputmode="numeric"
-                  autocomplete="one-time-code"
-                  pattern="[0-9]*"
-                  required
-                />
-              </label>
-              <button type="submit" data-i18n="auth.verifyCodeSubmit">Conferma e accedi</button>
-            </form>
-            <div class="auth-verify-actions">
-              <button type="button" id="auth-verify-back-btn" class="ghost-btn" data-i18n="auth.verifyBack">
-                Torna al login
-              </button>
-            </div>
-          </div>
           <div id="auth-resend-wrap" class="auth-resend-wrap hidden">
             <button type="button" id="auth-resend-btn" class="ghost-btn auth-resend-btn" data-i18n="auth.resendVerification">
               Reinvia email di conferma
@@ -562,6 +535,6 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
     <!-- Client modulare ES2020: vedi cartella `js/` (constants, store, dom, api, academic + app.js) -->
-    <script type="module" src="./js/app.js?v=2026-05-08-auth-code"></script>
+    <script type="module" src="./js/app.js?v=2026-05-07-email-verify"></script>
   </body>
 </html>

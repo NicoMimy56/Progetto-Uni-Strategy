@@ -233,10 +233,10 @@ async function sendFeatureRequestMail({ userEmail, subjectLine, body }) {
 /**
  * Email di conferma indirizzo dopo registrazione. Richiede gli stessi parametri SMTP delle altre mail transazionali.
  *
- * @param {{ toEmail: string, code: string }} opts Codice a 6 cifre (testo in chiaro nell’email).
+ * @param {{ toEmail: string, verifyUrl: string }} opts
  * @returns {Promise<{ sent: boolean, emailStatus?: string }>}
  */
-async function sendVerificationEmail({ toEmail, code }) {
+async function sendVerificationEmail({ toEmail, verifyUrl }) {
   const ctx = getSmtpAuthContext();
   if (!ctx.host) {
     console.warn("[verify-email] SMTP_HOST mancante: impossibile inviare conferma registrazione");
@@ -256,18 +256,18 @@ async function sendVerificationEmail({ toEmail, code }) {
   const text = [
     "Conferma il tuo account Uni-Strategy",
     "",
-    `Il tuo codice di verifica (valido 30 minuti): ${code}`,
+    "Apri il seguente link nel browser (valido 48 ore):",
     "",
-    "Inseriscilo nell’app nella schermata che appare subito dopo la registrazione.",
+    verifyUrl,
     "",
-    "Se non hai richiesto tu questa registrazione, ignora questo messaggio."
+    "Se non hai creato tu questo account, ignora questo messaggio."
   ].join("\n");
 
   try {
     await transporter.sendMail({
       from: `"Uni-Strategy" <${fromAddress}>`,
       to: toEmail,
-      subject: `Codice verifica Uni-Strategy: ${code}`,
+      subject: "Conferma la tua email — Uni-Strategy",
       text
     });
     console.log(`[verify-email] Inviata conferma a ${toEmail}`);

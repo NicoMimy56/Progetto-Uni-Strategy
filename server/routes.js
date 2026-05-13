@@ -10,10 +10,10 @@
  * - Le DELETE senza body spesso restituiscono `204 No Content` (corpo vuoto); il client `apiRequest` lo gestisce.
  *
  * Tabella rapida endpoint (metodo, path, auth):
- * | POST   | /api/auth/register     | no  | crea utente; invia codice a 6 cifre per email; nessun cookie finché non si conferma |
+ * | POST   | /api/auth/register     | no  | crea utente; invia email di verifica; nessun cookie finché non si conferma |
  * | POST   | /api/auth/login        | no  |
- * | POST   | /api/auth/verify-code  | no  | body `{ email, code }`; imposta cookie sessione se OK |
- * | POST   | /api/auth/resend-verification | no  | body `{ email }`; nuovo codice se account non verificato |
+ * | GET    | /api/auth/verify-email | no  | query `token`; imposta cookie sessione se OK |
+ * | POST   | /api/auth/resend-verification | no  | body `{ email }`; opaco (sempre `{ ok: true }` se email valida) |
  * | POST   | /api/auth/logout       | no  (invalida sessione se presente) |
  * | GET    | /api/auth/me           | no  (401 se cookie assente/invalido) |
  * | GET    | /api/bootstrap         | sì  |
@@ -46,14 +46,11 @@ const {
 const { toExamRow, toStudyRow, toSimulatedExamRow } = require("./mappers");
 const { sendFeatureRequestMail, sendVerificationEmail } = require("./featureRequestMail");
 
-/** Codice numerico a 6 cifre per conferma email (evita ambiguità tipo O/0). */
-function generateEmailVerificationCode() {
-  return String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
-}
-
-function normalizeVerificationCode(raw) {
-  const digits = String(raw || "").replace(/\D/g, "");
-  return digits.length >= 6 ? digits.slice(-6) : digits;
+function getAppPublicBaseUrl() {
+  const fromEnv = String(process.env.APP_BASE_URL || "").trim().replace(/\/$/, "");
+  if (fromEnv) return fromEnv;
+  const port = process.env.PORT || 3000;
+  return `http://localhost:${port}`;
 }
 
 /**
@@ -74,7 +71,8 @@ function registerApiRoutes(app) {
   /* ---------------------------------------------------------------------------
    * POST /api/auth/register
    * Body: { email, password }
-   * Crea utente non verificato, genera codice a 6 cifre (validità 30 min) e lo invia per email se SMTP ok.
+   * Crea utente con `email_verified_at` nullo, genera token (48h) e invia link se SMTP configurato.
+   * Non imposta cookie: accesso solo dopo GET /api/auth/verify-email o login post-verifica.
    * 201: { needsVerification, verificationEmailSent, user }
    * --------------------------------------------------------------------------- */
   app.post("/api/auth/register", async (req, res) => {
@@ -88,16 +86,17 @@ function registerApiRoutes(app) {
       return res.status(409).json({ error: "Email already registered." });
     }
     const { salt, hash } = hashPassword(password);
-    const code = generateEmailVerificationCode();
-    const verifyExpires = Date.now() + 30 * 60 * 1000;
+    const verifyToken = crypto.randomBytes(32).toString("hex");
+    const verifyExpires = Date.now() + 48 * 60 * 60 * 1000;
     const result = db
       .prepare(
         `INSERT INTO users (email, password_hash, password_salt, email_verified_at, email_verify_token, email_verify_expires_at)
          VALUES (?, ?, ?, NULL, ?, ?)`
       )
-      .run(email, hash, salt, code, verifyExpires);
+      .run(email, hash, salt, verifyToken, verifyExpires);
     const userId = Number(result.lastInsertRowid);
-    const mailResult = await sendVerificationEmail({ toEmail: email, code });
+    const verifyUrl = `${getAppPublicBaseUrl()}/?verify-email=${encodeURIComponent(verifyToken)}`;
+    const mailResult = await sendVerificationEmail({ toEmail: email, verifyUrl });
     return res.status(201).json({
       needsVerification: true,
       verificationEmailSent: mailResult.sent,
@@ -128,8 +127,7 @@ function registerApiRoutes(app) {
     }
     if (user.email_verified_at == null) {
       return res.status(403).json({
-        error:
-          "Inserisci il codice a 6 cifre ricevuto per email oppure chiedi un nuovo invio prima di accedere.",
+        error: "Verifica l'indirizzo email prima di accedere. Controlla la posta o richiedi un nuovo link.",
         code: "email_not_verified"
       });
     }
@@ -161,26 +159,23 @@ function registerApiRoutes(app) {
     return res.json({ user: { id: user.id, email: user.email } });
   });
 
-  /* POST /api/auth/verify-code — body { email, code }; conferma email e crea sessione */
-  app.post("/api/auth/verify-code", (req, res) => {
-    const email = String(req.body.email || "").trim().toLowerCase();
-    const code = normalizeVerificationCode(req.body.code);
-    if (!email.includes("@") || code.length !== 6) {
-      return res.status(400).json({ error: "Email o codice non validi." });
+  /* GET /api/auth/verify-email?token= — conferma email e crea sessione */
+  app.get("/api/auth/verify-email", (req, res) => {
+    const token = String(req.query.token || "").trim();
+    if (!token) {
+      return res.status(400).json({ error: "Token mancante." });
     }
     const now = Date.now();
     const row = db
       .prepare(
         `SELECT id, email FROM users
-         WHERE email = ?
-           AND email_verified_at IS NULL
-           AND email_verify_token = ?
+         WHERE email_verify_token = ?
            AND email_verify_expires_at IS NOT NULL
            AND email_verify_expires_at > ?`
       )
-      .get(email, code, now);
+      .get(token, now);
     if (!row) {
-      return res.status(400).json({ error: "Codice errato o scaduto." });
+      return res.status(400).json({ error: "Link non valido o scaduto." });
     }
     db.prepare(
       `UPDATE users SET email_verified_at = ?, email_verify_token = NULL, email_verify_expires_at = NULL WHERE id = ?`
@@ -190,7 +185,7 @@ function registerApiRoutes(app) {
     return res.json({ verified: true, user: { id: row.id, email: row.email } });
   });
 
-  /* POST /api/auth/resend-verification — body { email }; nuovo codice se account non verificato */
+  /* POST /api/auth/resend-verification — body { email }; risposta sempre neutra se formato OK */
   app.post("/api/auth/resend-verification", async (req, res) => {
     const email = String(req.body.email || "").trim().toLowerCase();
     if (!email.includes("@")) {
@@ -198,14 +193,13 @@ function registerApiRoutes(app) {
     }
     const row = db.prepare("SELECT id, email FROM users WHERE email = ? AND email_verified_at IS NULL").get(email);
     if (row) {
-      const code = generateEmailVerificationCode();
-      const verifyExpires = Date.now() + 30 * 60 * 1000;
-      db.prepare(`UPDATE users SET email_verify_token = ?, email_verify_expires_at = ? WHERE id = ?`).run(
-        code,
-        verifyExpires,
-        row.id
-      );
-      await sendVerificationEmail({ toEmail: row.email, code });
+      const verifyToken = crypto.randomBytes(32).toString("hex");
+      const verifyExpires = Date.now() + 48 * 60 * 60 * 1000;
+      db.prepare(
+        `UPDATE users SET email_verify_token = ?, email_verify_expires_at = ? WHERE id = ?`
+      ).run(verifyToken, verifyExpires, row.id);
+      const verifyUrl = `${getAppPublicBaseUrl()}/?verify-email=${encodeURIComponent(verifyToken)}`;
+      await sendVerificationEmail({ toEmail: row.email, verifyUrl });
     }
     return res.json({ ok: true });
   });

@@ -24,17 +24,13 @@
     "hintSmtpFailed": "Guardado, pero fallo el envio SMTP. Revisa .env y la consola del servidor."
   },
   "auth": {
-    "verifyEmailSent": "Te enviamos un codigo de 6 digitos. Introducelo abajo (valido 30 min). Revisa spam.",
-    "verifyEmailNotSent": "No se pudo enviar el correo (SMTP). Configura el servidor y usa «Reenviar codigo».",
-    "emailNotVerified": "Introduce el codigo de 6 digitos del correo o pide uno nuevo.",
-    "resendVerification": "Reenviar codigo por correo",
-    "resendSent": "Si la cuenta existe y no esta confirmada, revisa el correo para el nuevo codigo.",
-    "resendNeedEmail": "Se necesita un correo (campo de login o pantalla del codigo).",
-    "verifyCodeIntro": "Introduce el codigo de 6 digitos enviado a:",
-    "verifyCodeLabel": "Codigo (6 digitos)",
-    "verifyCodeSubmit": "Confirmar y entrar",
-    "verifyBack": "Volver al login",
-    "verifyWrongCode": "Codigo incorrecto o caducado. Reintenta o reenvia."
+    "verifyEmailSent": "Cuenta creada. Te enviamos un correo con un enlace para confirmar tu dirección. Revisa la bandeja (y spam) y abre el enlace antes de iniciar sesión.",
+    "verifyEmailNotSent": "No pudimos enviar el correo (SMTP no configurado o error). Configura SMTP en el servidor; en el login puedes usar «Reenviar correo de confirmación».",
+    "emailNotVerified": "Debes confirmar tu correo antes de acceder. Revisa la bandeja o usa «Reenviar correo de confirmación».",
+    "resendVerification": "Reenviar correo de confirmación",
+    "resendSent": "Si la cuenta existe y sigue sin confirmar, revisa el correo para el nuevo enlace.",
+    "resendNeedEmail": "Introduce tu correo en el campo de arriba antes de reenviar.",
+    "verifyFailed": "El enlace de confirmación no es válido o ha caducado. Puedes registrarte de nuevo o pedir un enlace nuevo desde el login."
   },
   "settings": {
     "pageTitle": "Configuracion",

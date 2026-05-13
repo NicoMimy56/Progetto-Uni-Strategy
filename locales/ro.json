@@ -24,17 +24,13 @@
     "hintSmtpFailed": "Salvat, dar trimiterea email a esuat. Verifica .env si consola serverului."
   },
   "auth": {
-    "verifyEmailSent": "Ti-am trimis un cod din 6 cifre prin email. Introdu-l mai jos (valabil 30 min). Verifica si folderul spam.",
-    "verifyEmailNotSent": "Nu am putut trimite emailul (SMTP). Configureaza serverul, apoi «Retrimite codul».",
-    "emailNotVerified": "Introdu codul din email sau solicita unul nou.",
-    "resendVerification": "Retrimite codul prin email",
-    "resendSent": "Daca exista contul si nu e confirmat, verifica mesajele pentru noul cod.",
-    "resendNeedEmail": "Este necesara o adresa de email (login sau ecranul codului).",
-    "verifyCodeIntro": "Introdu codul de 6 cifre trimis la:",
-    "verifyCodeLabel": "Cod (6 cifre)",
-    "verifyCodeSubmit": "Confirma si autentifica-te",
-    "verifyBack": "Inapoi la login",
-    "verifyWrongCode": "Cod gresit sau expirat. Incearca din nou sau retrimite codul."
+    "verifyEmailSent": "Cont creat. Ti-am trimis un email cu un link pentru a confirma adresa. Verifica mesajele (si spam) si deschide linkul inainte de autentificare.",
+    "verifyEmailNotSent": "Nu am putut trimite emailul (SMTP lipsa sau eroare). Configureaza SMTP pe server; de la login poti folosi «Retrimite email de confirmare».",
+    "emailNotVerified": "Trebuie sa confirmi emailul inainte de autentificare. Verifica mesajele sau foloseste «Retrimite email de confirmare».",
+    "resendVerification": "Retrimite email de confirmare",
+    "resendSent": "Daca exista contul si inca nu e confirmat, verifica mesajele pentru noul link.",
+    "resendNeedEmail": "Introdu emailul in campul de mai sus inainte de retrimitere.",
+    "verifyFailed": "Linkul de confirmare nu este valid sau a expirat. Poti te inregistra din nou sau cere un link nou de la login."
   },
   "settings": {
     "pageTitle": "Setari",

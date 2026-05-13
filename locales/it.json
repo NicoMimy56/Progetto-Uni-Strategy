@@ -24,17 +24,13 @@
     "hintSmtpFailed": "Richiesta salvata, ma l’invio email è fallito (errore SMTP). Controlla le credenziali in .env e il terminale del server per i dettagli."
   },
   "auth": {
-    "verifyEmailSent": "Ti abbiamo inviato un'email con un codice a 6 cifre. Inseriscilo qui sotto (valido 30 minuti). Controlla anche lo spam.",
-    "verifyEmailNotSent": "Non siamo riusciti a inviare l'email (SMTP non configurato o errore). Configura il server e usa «Reinvia email di conferma».",
-    "emailNotVerified": "Inserisci il codice a 6 cifre ricevuto per email, oppure chiedi un nuovo invio.",
-    "resendVerification": "Reinvia codice per email",
-    "resendSent": "Se l'account esiste ed è ancora da confermare, controlla la posta per il nuovo codice.",
-    "resendNeedEmail": "Serve un indirizzo email (sopra nel login, o nella schermata codice).",
-    "verifyCodeIntro": "Inserisci il codice a 6 cifre che hai ricevuto all'indirizzo:",
-    "verifyCodeLabel": "Codice (6 cifre)",
-    "verifyCodeSubmit": "Conferma e accedi",
-    "verifyBack": "Torna al login",
-    "verifyWrongCode": "Codice errato o scaduto. Riprova o «Reinvia codice»."
+    "verifyEmailSent": "Account creato. Ti abbiamo inviato un'email con un link per confermare l'indirizzo. Controlla la posta (anche spam) e apri il link prima di accedere.",
+    "verifyEmailNotSent": "Attenzione: non siamo riusciti a inviare l'email (SMTP non configurato o errore). Configura SMTP nel file .env del server; dalla schermata di login puoi usare «Reinvia email di conferma».",
+    "emailNotVerified": "Devi confermare l'indirizzo email prima di accedere. Controlla la posta o usa «Reinvia email di conferma».",
+    "resendVerification": "Reinvia email di conferma",
+    "resendSent": "Se l'account esiste ed è ancora da confermare, controlla la posta per il nuovo link.",
+    "resendNeedEmail": "Inserisci l'email nel campo sopra prima di reinviare.",
+    "verifyFailed": "Il link di conferma non è valido o è scaduto. Puoi registrarti di nuovo o richiedere un nuovo link dal login."
   },
   "settings": {
     "pageTitle": "Impostazioni",

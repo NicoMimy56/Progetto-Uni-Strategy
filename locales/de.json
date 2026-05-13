@@ -24,17 +24,13 @@
     "hintSmtpFailed": "Gespeichert, aber E-Mail-Versand fehlgeschlagen. .env und Server-Log pruefen."
   },
   "auth": {
-    "verifyEmailSent": "Wir haben dir einen 6-stelligen Code per E-Mail geschickt. Unten eingeben (30 Min gueltig). Spam-Ordner pruefen.",
-    "verifyEmailNotSent": "E-Mail konnte nicht gesendet werden (SMTP). Server konfigurieren, dann «Code erneut senden».",
-    "emailNotVerified": "Gib den 6-stelligen Code aus der E-Mail ein, oder fordere einen neuen an.",
-    "resendVerification": "Code erneut per E-Mail senden",
-    "resendSent": "Wenn das Konto existiert und noch unbestaetigt ist, pruefe die E-Mail fuer den neuen Code.",
-    "resendNeedEmail": "E-Mail-Adresse erforderlich (Login-Feld oder Code-Bildschirm).",
-    "verifyCodeIntro": "6-stelligen Code eingeben, gesendet an:",
-    "verifyCodeLabel": "Code (6 Ziffern)",
-    "verifyCodeSubmit": "Bestaetigen und anmelden",
-    "verifyBack": "Zurueck zum Login",
-    "verifyWrongCode": "Falscher oder abgelaufener Code. Erneut versuchen oder Code erneut senden."
+    "verifyEmailSent": "Konto erstellt. Wir haben dir eine E-Mail mit Bestaetigungslink geschickt. Postfach (und Spam) pruefen und Link oeffnen, bevor du dich anmeldest.",
+    "verifyEmailNotSent": "E-Mail konnte nicht gesendet werden (SMTP fehlt oder Fehler). SMTP in .env konfigurieren; beim Login kannst du «Bestaetigungsmail erneut senden» nutzen.",
+    "emailNotVerified": "Bitte E-Mail bestaetigen, bevor du dich anmeldest. Postfach pruefen oder «Bestaetigungsmail erneut senden».",
+    "resendVerification": "Bestaetigungsmail erneut senden",
+    "resendSent": "Wenn das Konto existiert und noch unbestaetigt ist, pruefe die E-Mail fuer den neuen Link.",
+    "resendNeedEmail": "Zuerst die E-Mail im Feld oben eintragen.",
+    "verifyFailed": "Der Bestaetigungslink ist ungueltig oder abgelaufen. Erneut registrieren oder neuen Link vom Login anfordern."
   },
   "settings": {
     "pageTitle": "Einstellungen",
