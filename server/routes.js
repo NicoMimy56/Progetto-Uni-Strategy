@@ -67,6 +67,18 @@ function normalizeExamStatusInput(rawStatus) {
   return status;
 }
 
+function getTodayIsoDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function isPastIsoDate(dateStr) {
+  return typeof dateStr === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateStr) && dateStr < getTodayIsoDate();
+}
+
 function registerApiRoutes(app) {
   /* ---------------------------------------------------------------------------
    * POST /api/auth/register
@@ -365,6 +377,9 @@ function registerApiRoutes(app) {
     if (!normalizedDay) {
       return res.status(400).json({ error: "Invalid study session day/date." });
     }
+    if (safeDate && isPastIsoDate(safeDate)) {
+      return res.status(400).json({ error: "Cannot create study sessions on past dates." });
+    }
 
     db.prepare(
       `INSERT INTO study_sessions (id, user_id, day, session_date, subject, description, start_time, end_time)
@@ -378,6 +393,15 @@ function registerApiRoutes(app) {
   });
 
   app.delete("/api/study-sessions/:id", requireAuth, (req, res) => {
+    const existing = db
+      .prepare("SELECT session_date FROM study_sessions WHERE id = ? AND user_id = ?")
+      .get(req.params.id, req.user.id);
+    if (!existing) {
+      return res.status(404).json({ error: "Study session not found." });
+    }
+    if (existing.session_date && isPastIsoDate(existing.session_date)) {
+      return res.status(400).json({ error: "Cannot modify study sessions on past dates." });
+    }
     db.prepare("DELETE FROM study_sessions WHERE id = ? AND user_id = ?").run(req.params.id, req.user.id);
     return res.status(204).send();
   });
@@ -396,10 +420,16 @@ function registerApiRoutes(app) {
       return res.status(400).json({ error: "Invalid study session day." });
     }
     const existing = db
-      .prepare("SELECT id FROM study_sessions WHERE id = ? AND user_id = ?")
+      .prepare("SELECT id, session_date FROM study_sessions WHERE id = ? AND user_id = ?")
       .get(id, req.user.id);
     if (!existing) {
       return res.status(404).json({ error: "Study session not found." });
+    }
+    if (existing.session_date && isPastIsoDate(existing.session_date)) {
+      return res.status(400).json({ error: "Cannot modify study sessions on past dates." });
+    }
+    if (isPastIsoDate(date)) {
+      return res.status(400).json({ error: "Cannot move study sessions to past dates." });
     }
     db.prepare("UPDATE study_sessions SET day = ?, session_date = ? WHERE id = ? AND user_id = ?").run(
       normalizedDay,
@@ -414,7 +444,10 @@ function registerApiRoutes(app) {
   });
 
   app.delete("/api/study-sessions", requireAuth, (req, res) => {
-    db.prepare("DELETE FROM study_sessions WHERE user_id = ?").run(req.user.id);
+    const today = getTodayIsoDate();
+    db.prepare(
+      "DELETE FROM study_sessions WHERE user_id = ? AND (session_date IS NULL OR session_date >= ?)"
+    ).run(req.user.id, today);
     return res.status(204).send();
   });
 
@@ -540,7 +573,8 @@ function registerApiRoutes(app) {
     }
     const allowedLanguages = ["it", "en", "fr", "de", "ro", "es"];
     const allowedThemePresets = ["classic", "forest", "sunset", "dark", "night", "sky"];
-    const allowedStudyWeekColors = ["violet", "forest", "sunset", "dark", "rose", "amber", "pink"];
+    const allowedStudyWeekPlanColors = ["violet", "forest", "sunset"];
+    const allowedStudyWeekExamColors = ["rose", "amber", "pink", "dark"];
     const allowedDegreePaths = ["bachelor", "master", "postgraduate", "custom"];
     if (!allowedLanguages.includes(profile.language)) {
       return res.status(400).json({ error: "Invalid language." });
@@ -548,10 +582,10 @@ function registerApiRoutes(app) {
     if (!allowedThemePresets.includes(profile.themePreset)) {
       return res.status(400).json({ error: "Invalid theme preset." });
     }
-    if (!allowedStudyWeekColors.includes(profile.studyWeekPlanColor)) {
+    if (!allowedStudyWeekPlanColors.includes(profile.studyWeekPlanColor)) {
       return res.status(400).json({ error: "Invalid study week plan color." });
     }
-    if (!allowedStudyWeekColors.includes(profile.studyWeekExamColor)) {
+    if (!allowedStudyWeekExamColors.includes(profile.studyWeekExamColor)) {
       return res.status(400).json({ error: "Invalid study week exam color." });
     }
     if (!allowedDegreePaths.includes(profile.degreePath)) {

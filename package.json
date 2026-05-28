@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
-    "smtp:verify": "node scripts/smtp-verify.js"
+    "smtp:verify": "node scripts/smtp-verify.js",
+    "reminders:run": "node scripts/run-calendar-reminders.js"
   },
   "keywords": [],
   "author": "",

@@ -25,10 +25,16 @@ export const upcomingTableBody = document.getElementById("upcoming-table-body");
 /* --- Metriche Home (media, CFU, grafico ad anello CSS conic-gradient) --- */
 export const gpaEl = document.getElementById("gpa");
 export const acquiredCreditsEl = document.getElementById("acquired-credits");
+export const pendingCreditsEl = document.getElementById("pending-credits");
+export const pendingCreditsRowEl = document.getElementById("pending-credits-row");
 export const totalCreditsEl = document.getElementById("total-credits");
+export const totalCreditsInlineEl = document.getElementById("total-credits-inline");
 export const remainingCreditsEl = document.getElementById("remaining-credits");
+export const projectedCreditsTotalEl = document.getElementById("projected-credits-total");
+export const creditsProjectedRowEl = document.getElementById("credits-projected-row");
 export const creditsChartEl = document.getElementById("credits-chart");
 export const creditsPercentageEl = document.getElementById("credits-percentage");
+export const creditsPercentageProjectedEl = document.getElementById("credits-percentage-projected");
 export const simulatorResultEl = document.getElementById("simulator-result");
 
 /* --- Pulsanti clear / utility --- */

@@ -25,7 +25,7 @@ export const CALENDAR_WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Su
  * Suffisso query string nei `fetch('/locales/xx.json?v=…')`: incrementa quando cambi traduzioni
  * così il browser non serve una copia stale dalla cache durante lo sviluppo.
  */
-export const APP_I18N_VERSION = "2026-05-28-weekly-org-split-colors";
+export const APP_I18N_VERSION = "2026-05-28-credits-pending-ring";
 
 /** Lingue per cui esiste effettivamente un file `locales/<codice>.json` nel progetto */
 export const SUPPORTED_LANGUAGES = ["it", "en", "fr", "de", "ro", "es"];
@@ -119,6 +119,12 @@ export const STUDY_WEEK_COLOR_PRESETS = {
   amber: "#ffeccc",
   pink: "#ffe5f3"
 };
+
+/** Chiavi selezionabili in Impostazioni per colore piano studi (Organizzazione Settimanale). */
+export const STUDY_WEEK_PLAN_COLOR_KEYS = ["violet", "forest", "sunset"];
+
+/** Chiavi selezionabili in Impostazioni per colore esami nel calendario organizzazione. */
+export const STUDY_WEEK_EXAM_COLOR_KEYS = ["rose", "amber", "pink", "dark"];
 
 /**
  * Profilo usato finché il server non restituisce `profile` in `/api/bootstrap`

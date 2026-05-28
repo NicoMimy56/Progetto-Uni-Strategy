@@ -108,7 +108,10 @@
             <div class="credits-chart-wrap">
               <div id="credits-chart" class="credits-chart">
                 <div class="credits-chart-inner">
-                  <span id="credits-percentage">0%</span>
+                  <div class="credits-chart-center">
+                    <span id="credits-percentage">0%</span>
+                    <span id="credits-percentage-projected" class="credits-percentage-projected hidden"></span>
+                  </div>
                 </div>
               </div>
               <div class="credits-legend">
@@ -117,12 +120,22 @@
                   <span data-i18n="home.cfuAcquired">CFU acquisiti</span>:
                   <strong id="acquired-credits">0</strong>
                 </p>
+                <p id="pending-credits-row" class="hidden">
+                  <span class="dot pending"></span>
+                  <span data-i18n="home.cfuPending">CFU da sostenere</span>:
+                  <strong id="pending-credits">0</strong>
+                </p>
                 <p>
                   <span class="dot left"></span>
-                  <span data-i18n="home.cfuRemaining">CFU mancanti</span>:
+                  <span data-i18n="home.cfuRemaining">CFU ancora mancanti</span>:
                   <strong id="remaining-credits">0</strong>
                 </p>
-                <p><span data-i18n="home.cfuPlanned">CFU totali pianificati</span>: <strong id="total-credits">0</strong></p>
+                <p class="credits-legend-projected hidden" id="credits-projected-row">
+                  <span data-i18n="home.cfuProjectedArrival">Arrivo previsto</span>:
+                  <strong id="projected-credits-total">0</strong>
+                  <span class="credits-legend-muted"> / <span id="total-credits-inline">0</span> CFU</span>
+                </p>
+                <p><span data-i18n="home.cfuPlanned">CFU totali obiettivo</span>: <strong id="total-credits">0</strong></p>
               </div>
             </div>
           </section>
@@ -524,10 +537,6 @@
                 <span class="theme-swatch swatch-sunset"></span>
                 <span data-i18n="settings.studyPaletteSunset">Sunset</span>
               </button>
-              <button type="button" class="settings-tile settings-tile-theme" data-study-plan-palette="dark">
-                <span class="theme-swatch swatch-dark"></span>
-                <span data-i18n="settings.studyPaletteDark">Dark</span>
-              </button>
             </div>
           </section>
         </div>
@@ -540,6 +549,6 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
     <!-- Client modulare ES2020: vedi cartella `js/` (constants, store, dom, api, academic + app.js) -->
-    <script type="module" src="./js/app.js?v=2026-05-28-weekly-org-split-colors"></script>
+    <script type="module" src="./js/app.js?v=2026-05-28-past-days-locked"></script>
   </body>
 </html>

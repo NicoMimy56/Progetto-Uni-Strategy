@@ -96,6 +96,16 @@ db.exec(`
     FOREIGN KEY(user_id) REFERENCES users(id)
   );
 
+  -- Log invii promemoria calendario (evita duplicati se il server resta acceso)
+  CREATE TABLE IF NOT EXISTS calendar_reminder_log (
+    user_id INTEGER NOT NULL,
+    reminder_type TEXT NOT NULL CHECK(reminder_type IN ('exam_imminent', 'daily_tasks')),
+    reference_date TEXT NOT NULL,
+    sent_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, reminder_type, reference_date),
+    FOREIGN KEY(user_id) REFERENCES users(id)
+  );
+
   -- Richieste inviate da utenti autenticati (POST /api/feature-requests); email opzionale via nodemailer
   CREATE TABLE IF NOT EXISTS feature_requests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

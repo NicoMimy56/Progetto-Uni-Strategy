@@ -17,6 +17,7 @@ const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 const { createApp } = require("./server/createApp");
+const { startCalendarReminderScheduler } = require("./server/calendarReminders");
 
 const PORT = process.env.PORT || 3000;
 const app = createApp();
@@ -30,4 +31,5 @@ app.listen(PORT, () => {
   } else {
     console.log("SMTP: non configurato — le richieste restano solo nel database");
   }
+  startCalendarReminderScheduler();
 });

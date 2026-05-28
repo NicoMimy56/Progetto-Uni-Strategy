@@ -152,14 +152,52 @@ async function verifySmtpCredentials() {
   await transporter.verify();
 }
 
-function logSmtpError(err) {
+function logSmtpError(err, label = "feature-requests email") {
   const parts = [
     err?.message,
     err?.code,
     err?.responseCode != null ? `HTTP/SMTP ${err.responseCode}` : null,
     typeof err?.response === "string" ? err.response.trim().slice(0, 500) : null
   ].filter(Boolean);
-  console.error("[feature-requests email] Errore SMTP:", parts.join(" | ") || err);
+  console.error(`[${label}] Errore SMTP:`, parts.join(" | ") || err);
+}
+
+/**
+ * Invio generico HTML/testo verso un destinatario (promemoria calendario, ecc.).
+ * @param {{ to: string, subject: string, html: string, text?: string }} opts
+ * @returns {Promise<{ sent: boolean, emailStatus?: string }>}
+ */
+async function sendTransactionalEmail({ to, subject, html, text }) {
+  const ctx = getSmtpAuthContext();
+  if (!ctx.host) {
+    console.warn("[transactional-email] Non invio: SMTP_HOST mancante");
+    return { sent: false, emailStatus: EMAIL_STATUS.missing_smtp_host };
+  }
+  if (ctx.user && !ctx.passForAuth) {
+    console.warn("[transactional-email] Non invio: SMTP_PASS vuota");
+    return { sent: false, emailStatus: EMAIL_STATUS.missing_smtp_password };
+  }
+
+  const transporter = createSmtpTransporterFromContext(ctx);
+  if (!transporter) {
+    return { sent: false, emailStatus: EMAIL_STATUS.missing_smtp_host };
+  }
+
+  const fromAddress = process.env.SMTP_FROM || ctx.user || "noreply@localhost";
+
+  try {
+    await transporter.sendMail({
+      from: `"Uni-Strategy" <${fromAddress}>`,
+      to,
+      subject,
+      html,
+      text: text || undefined
+    });
+    return { sent: true };
+  } catch (err) {
+    logSmtpError(err, "transactional-email");
+    return { sent: false, emailStatus: EMAIL_STATUS.smtp_error };
+  }
 }
 
 /** Codici opzionali per messaggi in UI / debug (nessun segreto). */
@@ -281,6 +319,7 @@ async function sendVerificationEmail({ toEmail, verifyUrl }) {
 module.exports = {
   sendFeatureRequestMail,
   sendVerificationEmail,
+  sendTransactionalEmail,
   EMAIL_STATUS,
   getSmtpDiagnostics,
   verifySmtpCredentials,

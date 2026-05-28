@@ -47,6 +47,8 @@ import {
   CALENDAR_LOCALES,
   THEME_PRESETS,
   STUDY_WEEK_COLOR_PRESETS,
+  STUDY_WEEK_PLAN_COLOR_KEYS,
+  STUDY_WEEK_EXAM_COLOR_KEYS,
   DEFAULT_PROFILE
 } from "./constants.js";
 import {
@@ -71,10 +73,16 @@ import {
   upcomingTableBody,
   gpaEl,
   acquiredCreditsEl,
+  pendingCreditsEl,
+  pendingCreditsRowEl,
   totalCreditsEl,
+  totalCreditsInlineEl,
   remainingCreditsEl,
+  projectedCreditsTotalEl,
+  creditsProjectedRowEl,
   creditsChartEl,
   creditsPercentageEl,
+  creditsPercentageProjectedEl,
   simulatorResultEl,
   clearSimBtn,
   clearBtn,
@@ -156,8 +164,14 @@ function syncHeaderLogoByTheme() {
 function applyTheme(theme) {
   const root = document.documentElement;
   const profile = getProfileForUi();
-  const studyPlanColor = STUDY_WEEK_COLOR_PRESETS[profile.studyWeekPlanColor] || STUDY_WEEK_COLOR_PRESETS.violet;
-  const studyExamColor = STUDY_WEEK_COLOR_PRESETS[profile.studyWeekExamColor] || STUDY_WEEK_COLOR_PRESETS.rose;
+  const planColorKey = STUDY_WEEK_PLAN_COLOR_KEYS.includes(profile.studyWeekPlanColor)
+    ? profile.studyWeekPlanColor
+    : DEFAULT_PROFILE.studyWeekPlanColor;
+  const examColorKey = STUDY_WEEK_EXAM_COLOR_KEYS.includes(profile.studyWeekExamColor)
+    ? profile.studyWeekExamColor
+    : DEFAULT_PROFILE.studyWeekExamColor;
+  const studyPlanColor = STUDY_WEEK_COLOR_PRESETS[planColorKey];
+  const studyExamColor = STUDY_WEEK_COLOR_PRESETS[examColorKey];
   root.style.setProperty("--primary", theme.primary);
   root.style.setProperty("--primary-dark", theme.primaryDark);
   root.style.setProperty("--bg", theme.background);
@@ -620,9 +634,13 @@ function getTodayIsoDate() {
   return toLocalIsoDate(now);
 }
 
-/** true se examDate è strettamente nel passato (regola stato Completato). */
+/** true se la data ISO è strettamente prima di oggi (locale). */
 function isDateBeforeToday(dateStr) {
   return typeof dateStr === "string" && dateStr !== "" && dateStr < getTodayIsoDate();
+}
+
+function isPastIsoDate(isoDate) {
+  return isDateBeforeToday(isoDate);
 }
 
 /** Nel form nuovo esame: data passata forza stato Completato + voto. */
@@ -687,6 +705,7 @@ function setupDateTimePickers() {
         altFormat: useIt ? "d/m/Y" : "m/d/Y",
         allowInput: false,
         defaultDate: "today",
+        minDate: "today",
         ...(useIt && flatpickr.l10ns?.it ? { locale: flatpickr.l10ns.it } : {})
       });
     }
@@ -1059,12 +1078,68 @@ function drawTrendChart(exams, targetGpa, graduationTarget) {
   ctx.fillText("Esito esame", chart.left + 140, 20);
 }
 
+/** Sessioni studio raggruppate per data ISO (filtro opzionale sul mese visualizzato). */
+function buildStudySessionsByDate(monthReference, year, month, restrictToMonth) {
+  const byDate = new Map();
+  getStudyPlan().forEach((session) => {
+    const isoDate = resolveSessionDate(session, monthReference);
+    if (!isoDate) return;
+    if (restrictToMonth) {
+      const dateObj = new Date(`${isoDate}T00:00:00`);
+      if (dateObj.getFullYear() !== year || dateObj.getMonth() !== month) return;
+    }
+    const list = byDate.get(isoDate) || [];
+    list.push(session);
+    byDate.set(isoDate, list);
+  });
+  return byDate;
+}
+
+function createCalendarExamChip(exam) {
+  const chip = document.createElement("div");
+  chip.className = "exam-chip";
+  chip.textContent = `${exam.subject} (${formatExamStatus(exam.status)})`;
+  return chip;
+}
+
+function appendCalendarExamsToCell(cell, exams, dayIso) {
+  exams
+    .filter((exam) => exam.examDate === dayIso && exam.status !== "Completed")
+    .forEach((exam) => {
+      cell.appendChild(createCalendarExamChip(exam));
+    });
+}
+
+function appendStudySessionsToCalendarCell(cell, sessions, { draggable = false, showDeleteButton = false } = {}) {
+  sessions.forEach((session) => {
+    const sessionPast = isStudySessionPast(session);
+    const canEdit = draggable && !sessionPast;
+    const canDelete = showDeleteButton && !sessionPast;
+    const item = document.createElement("div");
+    item.className = "study-item";
+    if (!canEdit) item.classList.add("calendar-study-readonly");
+    if (sessionPast) item.classList.add("study-item-past");
+    item.draggable = canEdit;
+    if (canEdit) item.dataset.sessionId = session.id;
+    const descriptionHtml = session.description ? `<p class="study-item-description">${session.description}</p>` : "";
+    const deleteBtnHtml = canDelete
+      ? `<button class="delete-btn" data-session-id="${session.id}" type="button">${t("study.deleteBtn")}</button>`
+      : "";
+    item.innerHTML = `
+      <strong>${session.subject}</strong>
+      <p class="study-item-time">${session.start} - ${session.end}</p>
+      ${descriptionHtml}
+      ${deleteBtnHtml}
+    `;
+    cell.appendChild(item);
+  });
+}
+
 /**
- * Vista mensile degli esami pianificati o in corso (`status !== "Completed"`).
- * Gli esami con stato Completato non compaiono nelle celle del calendario mensile (restano solo in elenco/tab Home); la griglia mostra solo esami ancora da pianificare o in corso.
+ * Vista mensile: esami pianificati o in corso + sessioni piano studio nello stesso mese.
+ * Gli esami completati non compaiono nelle celle (restano in elenco/tab Home).
  *
  * Padding iniziale: parte la griglia dalla colonna lunedi europea usando `(getDay()+6)%7`.
- * `toISOString().slice(0,10)` per il confronto giorno ↔ `exam_date` preserva coerenza con stringhe salvate dal client.
  */
 function renderCalendar(exams) {
   const year = currentCalendarDate.getFullYear();
@@ -1087,6 +1162,7 @@ function renderCalendar(exams) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const studyByDate = buildStudySessionsByDate(currentCalendarDate, year, month, true);
 
   for (let i = 0; i < startIndex; i += 1) {
     const empty = document.createElement("div");
@@ -1103,20 +1179,19 @@ function renderCalendar(exams) {
       cell.classList.add("today");
     }
 
+    const dayIso = toLocalIsoDate(cellDate);
+    if (isPastIsoDate(dayIso)) {
+      cell.classList.add("study-day-past");
+    }
+
     const dayNumber = document.createElement("p");
     dayNumber.className = "calendar-day-number";
     dayNumber.textContent = String(day);
     cell.appendChild(dayNumber);
 
-    const dayIso = toLocalIsoDate(cellDate);
-    exams
-      .filter((e) => e.examDate === dayIso && e.status !== "Completed")
-      .forEach((e) => {
-        const chip = document.createElement("div");
-        chip.className = "exam-chip";
-        chip.textContent = `${e.subject} (${formatExamStatus(e.status)})`;
-        cell.appendChild(chip);
-      });
+    appendCalendarExamsToCell(cell, exams, dayIso);
+    const sessions = (studyByDate.get(dayIso) || []).sort((a, b) => a.start.localeCompare(b.start));
+    appendStudySessionsToCalendarCell(cell, sessions, { draggable: false, showDeleteButton: false });
 
     calendarGridEl.appendChild(cell);
   }
@@ -1200,11 +1275,27 @@ function resolveSessionDate(session, monthReference) {
   return toLocalIsoDate(d);
 }
 
+/** Data effettiva di una sessione (campo `date` o ricavo dal giorno settimana). */
+function getStudySessionIsoDate(session) {
+  if (typeof session.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(session.date)) {
+    return session.date;
+  }
+  return resolveSessionDate(session, new Date());
+}
+
+function isStudySessionPast(session) {
+  const iso = getStudySessionIsoDate(session);
+  return Boolean(iso && isPastIsoDate(iso));
+}
+
 function getWeekdayFromIsoDate(isoDate) {
   return new Date(`${isoDate}T00:00:00`).toLocaleDateString("en-US", { weekday: "long" });
 }
 
 async function moveStudySession(sessionId, targetDate) {
+  if (isPastIsoDate(targetDate)) return;
+  const existing = getStudyPlan().find((item) => item.id === sessionId);
+  if (!existing || isStudySessionPast(existing)) return;
   const normalizedDay = getWeekdayFromIsoDate(targetDate);
   const updated = await apiRequest(`/api/study-sessions/${sessionId}`, {
     method: "PUT",
@@ -1221,7 +1312,6 @@ async function moveStudySession(sessionId, targetDate) {
  */
 function renderStudyBoard(containerEl, showDeleteButton, monthReference) {
   if (!containerEl) return;
-  const plan = getStudyPlan();
   containerEl.innerHTML = "";
   const year = monthReference.getFullYear();
   const month = monthReference.getMonth();
@@ -1230,16 +1320,14 @@ function renderStudyBoard(containerEl, showDeleteButton, monthReference) {
     studyMonthTitleEl.textContent = monthReference.toLocaleDateString(localeTag, { month: "long", year: "numeric" });
   }
 
-  const byDate = new Map();
-  plan.forEach((session) => {
-    const isoDate = resolveSessionDate(session, monthReference);
-    if (!isoDate) return;
-    const dateObj = new Date(`${isoDate}T00:00:00`);
-    if (ui.studyFilterMode === "month" && (dateObj.getFullYear() !== year || dateObj.getMonth() !== month)) return;
-    const list = byDate.get(isoDate) || [];
-    list.push(session);
-    byDate.set(isoDate, list);
-  });
+  const calendarExams = getExams().filter((exam) => exam.status !== "Completed" && exam.examDate);
+  const restrictToMonth = ui.studyFilterMode === "month";
+  const byDate = buildStudySessionsByDate(
+    monthReference,
+    year,
+    month,
+    restrictToMonth
+  );
   if (studyFilterWrapEl) studyFilterWrapEl.classList.toggle("hidden", !showDeleteButton);
   if (showDeleteButton) {
     studyFilterMonthBtn?.classList.toggle("active", ui.studyFilterMode === "month");
@@ -1269,33 +1357,20 @@ function renderStudyBoard(containerEl, showDeleteButton, monthReference) {
     const cell = document.createElement("div");
     cell.className = "calendar-day";
     cell.dataset.studyDate = isoDate;
-    if (showDeleteButton) cell.classList.add("study-dropzone");
+    const dayIsPast = isPastIsoDate(isoDate);
+    if (showDeleteButton && !dayIsPast) cell.classList.add("study-dropzone");
     const todayIso = getTodayIsoDate();
     if (isoDate === todayIso) cell.classList.add("today");
-    if (isoDate < todayIso) cell.classList.add("study-day-past");
+    if (dayIsPast) cell.classList.add("study-day-past");
     const dayNumber = document.createElement("p");
     dayNumber.className = "calendar-day-number";
     dayNumber.textContent = String(day);
     cell.appendChild(dayNumber);
-    if (sessions.length > 0) {
-      sessions.forEach((session) => {
-        const item = document.createElement("div");
-        item.className = "study-item";
-        item.draggable = showDeleteButton;
-        item.dataset.sessionId = session.id;
-        const descriptionHtml = session.description ? `<p class="study-item-description">${session.description}</p>` : "";
-        const deleteBtnHtml = showDeleteButton
-          ? `<button class="delete-btn" data-session-id="${session.id}" type="button">${t("study.deleteBtn")}</button>`
-          : "";
-        item.innerHTML = `
-          <strong>${session.subject}</strong>
-          <p class="study-item-time">${session.start} - ${session.end}</p>
-          ${descriptionHtml}
-          ${deleteBtnHtml}
-        `;
-        cell.appendChild(item);
-      });
-    }
+    appendCalendarExamsToCell(cell, calendarExams, isoDate);
+    appendStudySessionsToCalendarCell(cell, sessions, {
+      draggable: showDeleteButton && !dayIsPast,
+      showDeleteButton: showDeleteButton && !dayIsPast
+    });
     containerEl.appendChild(cell);
   }
 
@@ -1308,25 +1383,20 @@ function renderStudyBoard(containerEl, showDeleteButton, monthReference) {
     .sort();
   extraDates.forEach((isoDate) => {
     const sessions = (byDate.get(isoDate) || []).sort((a, b) => a.start.localeCompare(b.start));
+    const dayIsPast = isPastIsoDate(isoDate);
     const cell = document.createElement("div");
-    cell.className = "calendar-day study-day-out-month study-dropzone";
+    cell.className = "calendar-day study-day-out-month";
+    if (!dayIsPast) cell.classList.add("study-dropzone");
+    if (dayIsPast) cell.classList.add("study-day-past");
     cell.dataset.studyDate = isoDate;
     const label = document.createElement("p");
     label.className = "calendar-day-number";
     label.textContent = new Date(`${isoDate}T00:00:00`).toLocaleDateString(CALENDAR_LOCALES[state.profile.language] || "it-IT");
     cell.appendChild(label);
-    sessions.forEach((session) => {
-      const item = document.createElement("div");
-      item.className = "study-item";
-      item.draggable = true;
-      item.dataset.sessionId = session.id;
-      item.innerHTML = `
-        <strong>${session.subject}</strong>
-        <p class="study-item-time">${session.start} - ${session.end}</p>
-        ${session.description ? `<p class="study-item-description">${session.description}</p>` : ""}
-        <button class="delete-btn" data-session-id="${session.id}" type="button">${t("study.deleteBtn")}</button>
-      `;
-      cell.appendChild(item);
+    appendCalendarExamsToCell(cell, calendarExams, isoDate);
+    appendStudySessionsToCalendarCell(cell, sessions, {
+      draggable: !dayIsPast,
+      showDeleteButton: !dayIsPast
     });
     containerEl.appendChild(cell);
   });
@@ -1505,24 +1575,48 @@ function render() {
   homeShowPendingBtn.classList.toggle("active", state.homeExamFilter === "pending");
   homeShowCompletedBtn.classList.toggle("active", state.homeExamFilter === "completed");
 
-  /* --- KPI Home card: media, CFU dal profilo (`totalCfu`), anello CSS conico --- */
+  /* --- KPI Home card: media, CFU dal profilo (`totalCfu`), anello CSS conico (acquisiti + da sostenere + mancanti) --- */
   const gpa = weightedGpa(exams);
   const simGpa = simulatedGpa(exams, simulatedExams);
   const acquired = exams
     .filter((e) => e.status === "Completed")
     .reduce((acc, e) => acc + e.credits, 0);
+  const pending = exams
+    .filter((e) => e.status !== "Completed")
+    .reduce((acc, e) => acc + e.credits, 0);
   const total = state.profile.totalCfu;
-  const remaining = Math.max(total - acquired, 0);
-  const percentage = total > 0 ? (acquired / total) * 100 : 0;
-  const degree = Math.round((percentage / 100) * 360);
+  const acquiredShare = total > 0 ? Math.min(acquired, total) : 0;
+  const pendingShare = total > 0 ? Math.min(pending, Math.max(total - acquiredShare, 0)) : 0;
+  const remaining = Math.max(total - acquiredShare - pendingShare, 0);
+  const acquiredPct = total > 0 ? (acquiredShare / total) * 100 : 0;
+  const projectedTotal = acquiredShare + pendingShare;
+  const projectedPct = total > 0 ? (projectedTotal / total) * 100 : 0;
+  const degAcquired = total > 0 ? (acquiredShare / total) * 360 : 0;
+  const degPendingEnd = degAcquired + (total > 0 ? (pendingShare / total) * 360 : 0);
   const targetGpa = getTargetGpa();
 
   gpaEl.textContent = gpa.toFixed(2);
-  acquiredCreditsEl.textContent = String(acquired);
+  acquiredCreditsEl.textContent = String(acquiredShare);
   totalCreditsEl.textContent = String(total);
+  totalCreditsInlineEl.textContent = String(total);
   remainingCreditsEl.textContent = String(remaining);
-  creditsPercentageEl.textContent = `${percentage.toFixed(0)}%`;
-  creditsChartEl.style.background = `conic-gradient(var(--credits-ring-acquired) ${degree}deg, var(--credits-ring-remaining) ${degree}deg 360deg)`;
+  creditsPercentageEl.textContent = `${acquiredPct.toFixed(0)}%`;
+
+  const hasPending = pendingShare > 0;
+  pendingCreditsRowEl.classList.toggle("hidden", !hasPending);
+  creditsProjectedRowEl.classList.toggle("hidden", !hasPending);
+  if (hasPending) {
+    pendingCreditsEl.textContent = String(pendingShare);
+    projectedCreditsTotalEl.textContent = String(projectedTotal);
+    creditsPercentageProjectedEl.textContent = t("home.cfuProjectedPct", {
+      pct: projectedPct.toFixed(0)
+    });
+    creditsPercentageProjectedEl.classList.remove("hidden");
+    creditsChartEl.style.background = `conic-gradient(var(--credits-ring-acquired) 0deg ${degAcquired}deg, var(--credits-ring-pending) ${degAcquired}deg ${degPendingEnd}deg, var(--credits-ring-remaining) ${degPendingEnd}deg 360deg)`;
+  } else {
+    creditsPercentageProjectedEl.classList.add("hidden");
+    creditsChartEl.style.background = `conic-gradient(var(--credits-ring-acquired) 0deg ${degAcquired}deg, var(--credits-ring-remaining) ${degAcquired}deg 360deg)`;
+  }
 
   /**
    * «Obiettivo media» (campo Home): se `targetGpa` > 0, calcola la media aritmetica minima sulle CFU residue
@@ -1723,6 +1817,7 @@ studyForm.addEventListener("submit", async (event) => {
   const start = document.getElementById("study-start").value;
   const end = document.getElementById("study-end").value;
   if (!subject || !date || !start || !end || start >= end) return;
+  if (isPastIsoDate(date)) return;
 
   const session = {
     id: crypto.randomUUID(),
@@ -1774,6 +1869,8 @@ studyBoardEl.addEventListener("click", async (event) => {
   const target = event.target;
   if (target.tagName !== "BUTTON") return;
   const id = target.dataset.sessionId;
+  const session = getStudyPlan().find((item) => item.id === id);
+  if (!session || isStudySessionPast(session)) return;
   try {
     await apiRequest(`/api/study-sessions/${id}`, { method: "DELETE" });
     const updated = getStudyPlan().filter((item) => item.id !== id);
@@ -1787,6 +1884,11 @@ studyBoardEl.addEventListener("click", async (event) => {
 studyBoardEl.addEventListener("dragstart", (event) => {
   const item = event.target.closest(".study-item[data-session-id]");
   if (!item) return;
+  const session = getStudyPlan().find((s) => s.id === item.dataset.sessionId);
+  if (!session || isStudySessionPast(session)) {
+    event.preventDefault();
+    return;
+  }
   ui.draggingStudySessionId = item.dataset.sessionId || null;
   event.dataTransfer.effectAllowed = "move";
   item.classList.add("study-item-dragging");
@@ -1801,7 +1903,7 @@ studyBoardEl.addEventListener("dragend", (event) => {
 
 studyBoardEl.addEventListener("dragover", (event) => {
   const zone = event.target.closest(".study-dropzone[data-study-date]");
-  if (!zone || !ui.draggingStudySessionId) return;
+  if (!zone || !ui.draggingStudySessionId || isPastIsoDate(zone.dataset.studyDate)) return;
   event.preventDefault();
   event.dataTransfer.dropEffect = "move";
   studyBoardEl.querySelectorAll(".study-dropzone-active").forEach((el) => el.classList.remove("study-dropzone-active"));
@@ -1815,8 +1917,8 @@ studyBoardEl.addEventListener("drop", async (event) => {
   event.preventDefault();
   const targetDate = zone.dataset.studyDate;
   const existing = getStudyPlan().find((item) => item.id === sessionId);
-  const currentDate = existing ? resolveSessionDate(existing, currentStudyCalendarDate) : null;
-  if (!targetDate || currentDate === targetDate) {
+  const currentDate = existing ? getStudySessionIsoDate(existing) : null;
+  if (!targetDate || isPastIsoDate(targetDate) || (existing && isStudySessionPast(existing)) || currentDate === targetDate) {
     zone.classList.remove("study-dropzone-active");
     return;
   }
@@ -1836,7 +1938,7 @@ studyBoardEl.addEventListener("drop", async (event) => {
 clearStudyBtn.addEventListener("click", async () => {
   try {
     await apiRequest("/api/study-sessions", { method: "DELETE" });
-    saveStudyPlan([]);
+    saveStudyPlan(getStudyPlan().filter((session) => isStudySessionPast(session)));
     render();
   } catch (error) {
     alert(error.message);
@@ -1943,8 +2045,8 @@ saveSettingsBtn.addEventListener("click", async () => {
   const studyWeekExamColor = String(settingsDraftProfile.studyWeekExamColor || DEFAULT_PROFILE.studyWeekExamColor);
   if (!Number.isFinite(totalCfu) || totalCfu <= 0) return;
   if (!Number.isFinite(graduationTarget) || graduationTarget < 66 || graduationTarget > 110) return;
-  if (!Object.prototype.hasOwnProperty.call(STUDY_WEEK_COLOR_PRESETS, studyWeekPlanColor)) return;
-  if (!Object.prototype.hasOwnProperty.call(STUDY_WEEK_COLOR_PRESETS, studyWeekExamColor)) return;
+  if (!STUDY_WEEK_PLAN_COLOR_KEYS.includes(studyWeekPlanColor)) return;
+  if (!STUDY_WEEK_EXAM_COLOR_KEYS.includes(studyWeekExamColor)) return;
   Object.assign(settingsDraftProfile, { totalCfu, graduationTarget, studyWeekPlanColor, studyWeekExamColor });
   const profile = {
     language: settingsDraftProfile.language,
@@ -2181,6 +2283,12 @@ async function loadAppData() {
   ) {
     state.profile.studyWeekPlanColor = state.profile.studyWeekPalette;
     state.profile.studyWeekExamColor = state.profile.studyWeekPalette;
+  }
+  if (!STUDY_WEEK_PLAN_COLOR_KEYS.includes(state.profile.studyWeekPlanColor)) {
+    state.profile.studyWeekPlanColor = DEFAULT_PROFILE.studyWeekPlanColor;
+  }
+  if (!STUDY_WEEK_EXAM_COLOR_KEYS.includes(state.profile.studyWeekExamColor)) {
+    state.profile.studyWeekExamColor = DEFAULT_PROFILE.studyWeekExamColor;
   }
   if (!data.profile?.language) {
     state.profile.language = browserPreferredLanguage;
