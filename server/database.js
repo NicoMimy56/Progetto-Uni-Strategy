@@ -96,6 +96,15 @@ db.exec(`
     FOREIGN KEY(user_id) REFERENCES users(id)
   );
 
+  -- Codici invito registrazione (sincronizzati da REGISTRATION_INVITE_CODES in .env)
+  CREATE TABLE IF NOT EXISTS invite_codes (
+    code TEXT PRIMARY KEY,
+    max_uses INTEGER NOT NULL DEFAULT 5,
+    uses_count INTEGER NOT NULL DEFAULT 0,
+    note TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
   -- Log invii promemoria calendario (evita duplicati se il server resta acceso)
   CREATE TABLE IF NOT EXISTS calendar_reminder_log (
     user_id INTEGER NOT NULL,

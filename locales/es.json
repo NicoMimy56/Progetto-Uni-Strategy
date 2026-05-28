@@ -30,7 +30,15 @@
     "resendVerification": "Reenviar correo de confirmación",
     "resendSent": "Si la cuenta existe y sigue sin confirmar, revisa el correo para el nuevo enlace.",
     "resendNeedEmail": "Introduce tu correo en el campo de arriba antes de reenviar.",
-    "verifyFailed": "El enlace de confirmación no es válido o ha caducado. Puedes registrarte de nuevo o pedir un enlace nuevo desde el login."
+    "verifyFailed": "El enlace de confirmación no es válido o ha caducado. Puedes registrarte de nuevo o pedir un enlace nuevo desde el login.",
+    "inviteCodeLabel": "Codigo de invitacion",
+    "inviteCodePh": "Introduce el codigo recibido",
+    "inviteCodeHint": "Registro solo con invitacion: hace falta un codigo valido en el servidor.",
+    "registerSubmit": "Crear cuenta",
+    "registrationClosed": "Registro desactivado: no hay codigo de invitacion valido en el servidor.",
+    "inviteCodeRequired": "Introduce el codigo de invitacion.",
+    "inviteCodeInvalid": "Codigo de invitacion no valido.",
+    "inviteCodeExhausted": "Este codigo de invitacion ya no tiene usos disponibles."
   },
   "settings": {
     "pageTitle": "Configuracion",

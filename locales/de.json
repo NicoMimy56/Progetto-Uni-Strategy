@@ -30,7 +30,15 @@
     "resendVerification": "Bestaetigungsmail erneut senden",
     "resendSent": "Wenn das Konto existiert und noch unbestaetigt ist, pruefe die E-Mail fuer den neuen Link.",
     "resendNeedEmail": "Zuerst die E-Mail im Feld oben eintragen.",
-    "verifyFailed": "Der Bestaetigungslink ist ungueltig oder abgelaufen. Erneut registrieren oder neuen Link vom Login anfordern."
+    "verifyFailed": "Der Bestaetigungslink ist ungueltig oder abgelaufen. Erneut registrieren oder neuen Link vom Login anfordern.",
+    "inviteCodeLabel": "Einladungscode",
+    "inviteCodePh": "Code eingeben",
+    "inviteCodeHint": "Registrierung nur mit Einladung: ein auf dem Server hinterlegter Code ist erforderlich.",
+    "registerSubmit": "Konto erstellen",
+    "registrationClosed": "Registrierung deaktiviert: auf dem Server ist kein gueltiger Einladungscode konfiguriert.",
+    "inviteCodeRequired": "Bitte den Einladungscode eingeben.",
+    "inviteCodeInvalid": "Ungueltiger Einladungscode.",
+    "inviteCodeExhausted": "Dieser Einladungscode hat keine freien Nutzungen mehr."
   },
   "settings": {
     "pageTitle": "Einstellungen",

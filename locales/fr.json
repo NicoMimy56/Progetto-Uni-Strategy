@@ -30,7 +30,15 @@
     "resendVerification": "Renvoyer l’e-mail de confirmation",
     "resendSent": "Si le compte existe et n’est pas encore confirme, verifiez votre boite pour le nouveau lien.",
     "resendNeedEmail": "Saisissez votre e-mail dans le champ ci-dessus avant de renvoyer.",
-    "verifyFailed": "Ce lien de confirmation est invalide ou expire. Vous pouvez vous inscrire a nouveau ou demander un lien depuis la connexion."
+    "verifyFailed": "Ce lien de confirmation est invalide ou expire. Vous pouvez vous inscrire a nouveau ou demander un lien depuis la connexion.",
+    "inviteCodeLabel": "Code d'invitation",
+    "inviteCodePh": "Saisissez le code recu",
+    "inviteCodeHint": "Inscription sur invitation : un code valide configure sur le serveur est requis.",
+    "registerSubmit": "Creer un compte",
+    "registrationClosed": "Inscription desactivee : aucun code d'invitation valide sur le serveur.",
+    "inviteCodeRequired": "Saisissez le code d'invitation.",
+    "inviteCodeInvalid": "Code d'invitation invalide.",
+    "inviteCodeExhausted": "Ce code d'invitation n'a plus d'utilisations disponibles."
   },
   "settings": {
     "pageTitle": "Parametres",

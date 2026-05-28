@@ -103,6 +103,8 @@ export const authLoginTabBtn = document.getElementById("auth-login-tab");
 export const authRegisterTabBtn = document.getElementById("auth-register-tab");
 export const authLoginForm = document.getElementById("auth-login-form");
 export const authRegisterForm = document.getElementById("auth-register-form");
+export const authRegisterInviteInput = document.getElementById("auth-register-invite");
+export const authRegistrationClosedEl = document.getElementById("auth-registration-closed");
 export const logoutBtn = document.getElementById("logout-btn");
 
 export const authResendWrap = document.getElementById("auth-resend-wrap");

@@ -30,7 +30,15 @@
     "resendVerification": "Retrimite email de confirmare",
     "resendSent": "Daca exista contul si inca nu e confirmat, verifica mesajele pentru noul link.",
     "resendNeedEmail": "Introdu emailul in campul de mai sus inainte de retrimitere.",
-    "verifyFailed": "Linkul de confirmare nu este valid sau a expirat. Poti te inregistra din nou sau cere un link nou de la login."
+    "verifyFailed": "Linkul de confirmare nu este valid sau a expirat. Poti te inregistra din nou sau cere un link nou de la login.",
+    "inviteCodeLabel": "Cod de invitatie",
+    "inviteCodePh": "Introdu codul primit",
+    "inviteCodeHint": "Inregistrarea este doar pe invitatie: ai nevoie de un cod valid configurat pe server.",
+    "registerSubmit": "Creeaza cont",
+    "registrationClosed": "Inregistrarea este dezactivata: nu exista un cod de invitatie valid pe server.",
+    "inviteCodeRequired": "Introdu codul de invitatie.",
+    "inviteCodeInvalid": "Cod de invitatie invalid.",
+    "inviteCodeExhausted": "Acest cod de invitatie nu mai are utilizari disponibile."
   },
   "settings": {
     "pageTitle": "Setari",

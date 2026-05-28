@@ -57,10 +57,26 @@
             <button type="submit">Accedi</button>
           </form>
           <form id="auth-register-form" class="auth-form hidden">
+            <label>
+              <span data-i18n="auth.inviteCodeLabel">Codice invito</span>
+              <input
+                id="auth-register-invite"
+                type="text"
+                required
+                autocomplete="off"
+                spellcheck="false"
+                data-i18n-placeholder="auth.inviteCodePh"
+                placeholder="Inserisci il codice ricevuto"
+              />
+            </label>
+            <p class="auth-field-hint" data-i18n="auth.inviteCodeHint">
+              La registrazione è riservata: senza codice valido non puoi creare un account.
+            </p>
             <label>Email<input id="auth-register-email" type="email" required /></label>
             <label>Password<input id="auth-register-password" type="password" minlength="6" required /></label>
-            <button type="submit">Crea account</button>
+            <button type="submit" data-i18n="auth.registerSubmit">Crea account</button>
           </form>
+          <p id="auth-registration-closed" class="auth-registration-closed hidden" data-i18n="auth.registrationClosed"></p>
           <div id="auth-resend-wrap" class="auth-resend-wrap hidden">
             <button type="button" id="auth-resend-btn" class="ghost-btn auth-resend-btn" data-i18n="auth.resendVerification">
               Reinvia email di conferma

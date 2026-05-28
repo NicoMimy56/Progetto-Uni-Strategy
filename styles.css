@@ -210,6 +210,30 @@ body {
   gap: 0.6rem;
 }
 
+.auth-field-hint {
+  margin: -0.2rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.auth-registration-closed {
+  margin: 0.5rem 0 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+}
+
+.auth-tab-btn.auth-tab-disabled,
+.auth-tab-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .auth-status {
   margin-top: 0.7rem !important;
   min-height: 1rem;

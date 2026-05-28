@@ -30,7 +30,15 @@
     "resendVerification": "Reinvia email di conferma",
     "resendSent": "Se l'account esiste ed è ancora da confermare, controlla la posta per il nuovo link.",
     "resendNeedEmail": "Inserisci l'email nel campo sopra prima di reinviare.",
-    "verifyFailed": "Il link di conferma non è valido o è scaduto. Puoi registrarti di nuovo o richiedere un nuovo link dal login."
+    "verifyFailed": "Il link di conferma non è valido o è scaduto. Puoi registrarti di nuovo o richiedere un nuovo link dal login.",
+    "inviteCodeLabel": "Codice invito",
+    "inviteCodePh": "Inserisci il codice ricevuto",
+    "inviteCodeHint": "La registrazione è riservata: serve un codice valido configurato sul server.",
+    "registerSubmit": "Crea account",
+    "registrationClosed": "Registrazione disabilitata: sul server non è configurato alcun codice invito valido.",
+    "inviteCodeRequired": "Inserisci il codice invito.",
+    "inviteCodeInvalid": "Codice invito non valido.",
+    "inviteCodeExhausted": "Questo codice invito ha esaurito gli utilizzi disponibili."
   },
   "settings": {
     "pageTitle": "Impostazioni",

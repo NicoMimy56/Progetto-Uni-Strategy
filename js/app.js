@@ -129,6 +129,8 @@ import {
   authRegisterTabBtn,
   authLoginForm,
   authRegisterForm,
+  authRegisterInviteInput,
+  authRegistrationClosedEl,
   logoutBtn,
   authResendWrap,
   authResendBtn
@@ -734,13 +736,58 @@ function resetAddExamForm() {
   applyExamDateStatusRule();
 }
 
+/** Config registrazione da GET `/api/auth/registration-config` (codice invito obbligatorio se aperta). */
+let registrationConfig = { registrationOpen: true, inviteRequired: true };
+
+function mapRegisterErrorMessage(error) {
+  const keyByCode = {
+    registration_closed: "auth.registrationClosed",
+    invite_code_required: "auth.inviteCodeRequired",
+    invite_code_invalid: "auth.inviteCodeInvalid",
+    invite_code_exhausted: "auth.inviteCodeExhausted"
+  };
+  const key = error?.code ? keyByCode[error.code] : null;
+  return key ? t(key) : error.message;
+}
+
+/** Aggiorna tab Registrati e messaggio se la registrazione è chiusa sul server. */
+function applyRegistrationConfigUi() {
+  const open = registrationConfig.registrationOpen !== false;
+  authRegisterTabBtn.disabled = !open;
+  authRegisterTabBtn.classList.toggle("auth-tab-disabled", !open);
+  if (!open && ui.authMode === "register") {
+    setAuthMode("login");
+    return;
+  }
+  authRegistrationClosedEl?.classList.toggle("hidden", open || ui.authMode !== "register");
+}
+
+async function loadRegistrationConfig() {
+  try {
+    registrationConfig = await apiRequest("/api/auth/registration-config");
+  } catch {
+    registrationConfig = { registrationOpen: false, inviteRequired: true };
+  }
+  applyRegistrationConfigUi();
+}
+
 /** Schede Login / Registrati sulla schermata auth. */
 function setAuthMode(mode) {
+  if (mode === "register" && registrationConfig.registrationOpen === false) {
+    mode = "login";
+  }
   ui.authMode = mode;
   authLoginTabBtn.classList.toggle("active", mode === "login");
   authRegisterTabBtn.classList.toggle("active", mode === "register");
   authLoginForm.classList.toggle("hidden", mode !== "login");
   authRegisterForm.classList.toggle("hidden", mode !== "register");
+  authRegistrationClosedEl?.classList.toggle(
+    "hidden",
+    mode !== "register" || registrationConfig.registrationOpen !== false
+  );
+  if (mode === "register" && registrationConfig.registrationOpen !== false) {
+    authRegisterForm.classList.remove("hidden");
+  }
   authResendWrap?.classList.add("hidden");
   if (authStatusEl) authStatusEl.textContent = "";
 }
@@ -2107,10 +2154,11 @@ authRegisterForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const email = document.getElementById("auth-register-email").value.trim();
   const password = document.getElementById("auth-register-password").value;
+  const inviteCode = authRegisterInviteInput?.value.trim() ?? "";
   try {
     const data = await apiRequest("/api/auth/register", {
       method: "POST",
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password, inviteCode })
     });
     authRegisterForm.reset();
     if (data.needsVerification) {
@@ -2125,7 +2173,7 @@ authRegisterForm.addEventListener("submit", async (event) => {
     showAppView();
     scheduleTrendChartDraw();
   } catch (error) {
-    showAuthView(error.message);
+    showAuthView(mapRegisterErrorMessage(error));
   }
 });
 
@@ -2324,6 +2372,7 @@ async function initializeApp() {
       return;
     } catch {
       await translateStaticUi();
+      await loadRegistrationConfig();
       showAuthView(t("auth.verifyFailed"));
       window.history.replaceState({}, "", window.location.pathname);
       setAuthMode("login");
@@ -2339,6 +2388,7 @@ async function initializeApp() {
   } catch {
     if (!i18nReady) await initI18n(getBrowserPreferredLanguage());
     await translateStaticUi();
+    await loadRegistrationConfig();
     showAuthView();
     setAuthMode("login");
   }

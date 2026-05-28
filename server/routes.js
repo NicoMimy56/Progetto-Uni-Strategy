@@ -10,7 +10,8 @@
  * - Le DELETE senza body spesso restituiscono `204 No Content` (corpo vuoto); il client `apiRequest` lo gestisce.
  *
  * Tabella rapida endpoint (metodo, path, auth):
- * | POST   | /api/auth/register     | no  | crea utente; invia email di verifica; nessun cookie finché non si conferma |
+ * | GET    | /api/auth/registration-config | no | `{ registrationOpen, inviteRequired }` per UI registrazione |
+ * | POST   | /api/auth/register     | no  | richiede `inviteCode` se registrazione ristretta; email di verifica |
  * | POST   | /api/auth/login        | no  |
  * | GET    | /api/auth/verify-email | no  | query `token`; imposta cookie sessione se OK |
  * | POST   | /api/auth/resend-verification | no  | body `{ email }`; opaco (sempre `{ ok: true }` se email valida) |
@@ -45,6 +46,12 @@ const {
 } = require("./auth");
 const { toExamRow, toStudyRow, toSimulatedExamRow } = require("./mappers");
 const { sendFeatureRequestMail, sendVerificationEmail } = require("./featureRequestMail");
+const {
+  syncInviteCodesFromEnv,
+  isRegistrationOpen,
+  checkInviteCode,
+  consumeInviteCode
+} = require("./inviteCodes");
 
 function getAppPublicBaseUrl() {
   const fromEnv = String(process.env.APP_BASE_URL || "").trim().replace(/\/$/, "");
@@ -80,14 +87,54 @@ function isPastIsoDate(dateStr) {
 }
 
 function registerApiRoutes(app) {
+  syncInviteCodesFromEnv();
+
+  /* ---------------------------------------------------------------------------
+   * GET /api/auth/registration-config
+   * Indica se la registrazione è aperta (almeno un codice invito valido) e se serve il campo invito.
+   * --------------------------------------------------------------------------- */
+  app.get("/api/auth/registration-config", (_req, res) => {
+    const registrationOpen = isRegistrationOpen();
+    return res.json({
+      registrationOpen,
+      inviteRequired: registrationOpen
+    });
+  });
+
   /* ---------------------------------------------------------------------------
    * POST /api/auth/register
-   * Body: { email, password }
+   * Body: { email, password, inviteCode }
    * Crea utente con `email_verified_at` nullo, genera token (48h) e invia link se SMTP configurato.
    * Non imposta cookie: accesso solo dopo GET /api/auth/verify-email o login post-verifica.
    * 201: { needsVerification, verificationEmailSent, user }
    * --------------------------------------------------------------------------- */
   app.post("/api/auth/register", async (req, res) => {
+    if (!isRegistrationOpen()) {
+      return res.status(403).json({
+        error: "Registration is closed. No invite codes configured on the server.",
+        code: "registration_closed"
+      });
+    }
+
+    const inviteCode = req.body.inviteCode;
+    const inviteCheck = checkInviteCode(inviteCode);
+    if (!inviteCheck.ok) {
+      const codeByReason = {
+        missing: "invite_code_required",
+        invalid: "invite_code_invalid",
+        exhausted: "invite_code_exhausted"
+      };
+      const messageByReason = {
+        missing: "Invite code is required.",
+        invalid: "Invite code is not valid.",
+        exhausted: "This invite code has already been used the maximum number of times."
+      };
+      return res.status(403).json({
+        error: messageByReason[inviteCheck.reason],
+        code: codeByReason[inviteCheck.reason]
+      });
+    }
+
     const email = String(req.body.email || "").trim().toLowerCase();
     const password = String(req.body.password || "");
     if (!email.includes("@") || password.length < 6) {
@@ -107,6 +154,7 @@ function registerApiRoutes(app) {
       )
       .run(email, hash, salt, verifyToken, verifyExpires);
     const userId = Number(result.lastInsertRowid);
+    consumeInviteCode(inviteCode);
     const verifyUrl = `${getAppPublicBaseUrl()}/?verify-email=${encodeURIComponent(verifyToken)}`;
     const mailResult = await sendVerificationEmail({ toEmail: email, verifyUrl });
     return res.status(201).json({

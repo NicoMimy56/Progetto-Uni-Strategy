@@ -30,7 +30,15 @@
     "resendVerification": "Resend confirmation email",
     "resendSent": "If the account exists and is still unconfirmed, check your inbox for the new link.",
     "resendNeedEmail": "Enter your email in the field above before resending.",
-    "verifyFailed": "This confirmation link is invalid or expired. You can register again or request a new link from the login screen."
+    "verifyFailed": "This confirmation link is invalid or expired. You can register again or request a new link from the login screen.",
+    "inviteCodeLabel": "Invite code",
+    "inviteCodePh": "Enter the code you received",
+    "inviteCodeHint": "Registration is invite-only: you need a valid code configured on the server.",
+    "registerSubmit": "Create account",
+    "registrationClosed": "Registration is disabled: no valid invite code is configured on the server.",
+    "inviteCodeRequired": "Please enter the invite code.",
+    "inviteCodeInvalid": "Invalid invite code.",
+    "inviteCodeExhausted": "This invite code has no uses left."
   },
   "settings": {
     "pageTitle": "Settings",
