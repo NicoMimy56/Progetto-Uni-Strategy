@@ -46,6 +46,7 @@ import {
   SUPPORTED_LANGUAGES,
   CALENDAR_LOCALES,
   THEME_PRESETS,
+  STUDY_WEEK_COLOR_PRESETS,
   DEFAULT_PROFILE
 } from "./constants.js";
 import {
@@ -53,6 +54,7 @@ import {
   studyTimePickerState,
   ui,
   currentCalendarDate,
+  currentStudyCalendarDate,
   getTargetGpa,
   getExams,
   saveExams,
@@ -90,6 +92,13 @@ import {
   studyBoardEl,
   homeStudyBoardEl,
   clearStudyBtn,
+  studyDateInput,
+  prevStudyMonthBtn,
+  nextStudyMonthBtn,
+  studyMonthTitleEl,
+  studyFilterWrapEl,
+  studyFilterMonthBtn,
+  studyFilterAllBtn,
   tabButtons,
   tabContents,
   homeShowPendingBtn,
@@ -114,11 +123,7 @@ import {
   authRegisterForm,
   logoutBtn,
   authResendWrap,
-  authResendBtn,
-  featureRequestForm,
-  featureRequestSubject,
-  featureRequestMessage,
-  featureRequestStatusEl
+  authResendBtn
 } from "./dom.js";
 import { apiRequest } from "./api.js";
 import { weightedGpa, simulatedGpa, daysRemaining } from "./academic.js";
@@ -150,6 +155,9 @@ function syncHeaderLogoByTheme() {
  */
 function applyTheme(theme) {
   const root = document.documentElement;
+  const profile = getProfileForUi();
+  const studyPlanColor = STUDY_WEEK_COLOR_PRESETS[profile.studyWeekPlanColor] || STUDY_WEEK_COLOR_PRESETS.violet;
+  const studyExamColor = STUDY_WEEK_COLOR_PRESETS[profile.studyWeekExamColor] || STUDY_WEEK_COLOR_PRESETS.rose;
   root.style.setProperty("--primary", theme.primary);
   root.style.setProperty("--primary-dark", theme.primaryDark);
   root.style.setProperty("--bg", theme.background);
@@ -157,7 +165,9 @@ function applyTheme(theme) {
   root.style.setProperty("--text", theme.text);
   root.style.setProperty("--muted", theme.muted);
   root.style.setProperty("--border", theme.border || "#d9e1eb");
-  document.documentElement.classList.toggle("theme-dark", getProfileForUi().themePreset === "dark");
+  root.style.setProperty("--home-study-session-bg", studyPlanColor);
+  root.style.setProperty("--home-study-exam-bg", studyExamColor);
+  document.documentElement.classList.toggle("theme-dark", profile.themePreset === "dark");
   syncHeaderLogoByTheme();
 }
 
@@ -193,6 +203,12 @@ function syncProfileInputs() {
   });
   settingsTabEl.querySelectorAll("[data-settings-theme]").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.settingsTheme === p.themePreset);
+  });
+  settingsTabEl.querySelectorAll("[data-study-plan-palette]").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.studyPlanPalette === p.studyWeekPlanColor);
+  });
+  settingsTabEl.querySelectorAll("[data-study-exam-palette]").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.studyExamPalette === p.studyWeekExamColor);
   });
   settingsTabEl.querySelectorAll("[data-settings-lang]").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.settingsLang === p.language);
@@ -314,11 +330,6 @@ function getLocalizedDay(day) {
   return t(`days.${day}`);
 }
 
-/** Testo placeholder colonna vuota piano studio. */
-function getNoSessionLabel() {
-  return t("study.noSession");
-}
-
 /**
  * Lingua preferita del browser normalizzata ai codici app (`it`, `en`, ...).
  * Esempio: `en-US` -> `en`. Fallback: lingua di DEFAULT_PROFILE.
@@ -356,9 +367,6 @@ async function translateStaticUi() {
   examStatusInput.querySelectorAll("option").forEach((option) => {
     const mapKey = statusMap[option.value];
     option.textContent = mapKey ? t(mapKey) : option.value;
-  });
-  studyForm.querySelectorAll("#study-day option").forEach((option) => {
-    option.textContent = t(`days.${option.value}`);
   });
 }
 
@@ -410,7 +418,8 @@ function setDegreeFromTile(path) {
 // Sezione: selezione data esame (flatpickr) e popover orario sessioni studio
 /** Rimuove istanza flatpickr precedente prima di ricrearla (cambio lingua). */
 function destroyDatePickers() {
-  [examDateInput].forEach((el) => {
+  [examDateInput, studyDateInput].forEach((el) => {
+    if (!el) return;
     if (el._flatpickr) el._flatpickr.destroy();
   });
 }
@@ -596,11 +605,19 @@ function syncGradeInputByStatus() {
   }
 }
 
-/** Data odierna in UTC slice usata per confronti ISO `YYYY-MM-DD`. */
+/** Helper data locale in formato `YYYY-MM-DD` per confronti coerenti in UI. */
+function toLocalIsoDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/** Data odierna locale in formato `YYYY-MM-DD`. */
 function getTodayIsoDate() {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
-  return now.toISOString().slice(0, 10);
+  return toLocalIsoDate(now);
 }
 
 /** true se examDate è strettamente nel passato (regola stato Completato). */
@@ -663,6 +680,16 @@ function setupDateTimePickers() {
       allowInput: false,
       ...(useIt && flatpickr.l10ns?.it ? { locale: flatpickr.l10ns.it } : {})
     });
+    if (studyDateInput) {
+      flatpickr(studyDateInput, {
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: useIt ? "d/m/Y" : "m/d/Y",
+        allowInput: false,
+        defaultDate: "today",
+        ...(useIt && flatpickr.l10ns?.it ? { locale: flatpickr.l10ns.it } : {})
+      });
+    }
   }
   setupStudyTimePicker();
 }
@@ -1081,7 +1108,7 @@ function renderCalendar(exams) {
     dayNumber.textContent = String(day);
     cell.appendChild(dayNumber);
 
-    const dayIso = cellDate.toISOString().slice(0, 10);
+    const dayIso = toLocalIsoDate(cellDate);
     exams
       .filter((e) => e.examDate === dayIso && e.status !== "Completed")
       .forEach((e) => {
@@ -1097,47 +1124,166 @@ function renderCalendar(exams) {
 
 /** Tab Piano Studio: colonne giorni con pulsanti elimina sessione. */
 function renderStudyPlan() {
-  renderStudyBoard(studyBoardEl, true);
+  renderStudyBoard(studyBoardEl, true, currentStudyCalendarDate);
 }
 
 /** Home: stesso layout ma senza rimozioni (solo lettura planner). */
 function renderHomeStudyPlan() {
-  renderStudyBoard(homeStudyBoardEl, false);
+  if (!homeStudyBoardEl) return;
+  studyFilterWrapEl?.classList.add("hidden");
+  homeStudyBoardEl.innerHTML = "";
+  homeStudyBoardEl.classList.add("home-week-board");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const locale = CALENDAR_LOCALES[state.profile.language] || "it-IT";
+  const exams = getExams().filter((exam) => exam.status !== "Completed" && exam.examDate);
+
+  for (let i = 0; i < 7; i += 1) {
+    const dayDate = new Date(today);
+    dayDate.setDate(today.getDate() + i);
+    const dayIso = toLocalIsoDate(dayDate);
+    const sessions = getStudyPlan()
+      .map((session) => ({ session, iso: resolveSessionDate(session, today) }))
+      .filter(({ iso }) => iso === dayIso)
+      .map(({ session }) => session)
+      .sort((a, b) => a.start.localeCompare(b.start));
+    const dayExams = exams.filter((exam) => exam.examDate === dayIso);
+    const dayCol = document.createElement("div");
+    dayCol.className = "home-week-day";
+    if (i === 0) dayCol.classList.add("today");
+    const title = document.createElement("h3");
+    title.textContent = dayDate.toLocaleDateString(locale, { weekday: "short", day: "2-digit", month: "2-digit" });
+    dayCol.appendChild(title);
+
+    dayExams.forEach((exam) => {
+      const examItem = document.createElement("div");
+      examItem.className = "home-week-item exam";
+      examItem.innerHTML = `
+        <strong>${exam.subject}</strong>
+        <p class="study-item-time">${t("home.examsTitle")}${exam.examDate ? ` - ${exam.examDate}` : ""}</p>
+      `;
+      dayCol.appendChild(examItem);
+    });
+    sessions.forEach((session) => {
+      const item = document.createElement("div");
+      item.className = "home-week-item study";
+      item.innerHTML = `
+        <strong>${session.subject}</strong>
+        <p class="study-item-time">${session.start} - ${session.end}</p>
+        ${session.description ? `<p class="study-item-description">${session.description}</p>` : ""}
+      `;
+      dayCol.appendChild(item);
+    });
+    if (!dayExams.length && !sessions.length) {
+      dayCol.innerHTML += `<p class="empty-text">${t("study.noSession")}</p>`;
+    }
+    homeStudyBoardEl.appendChild(dayCol);
+  }
 }
 
 /**
- * Sette colonne WEEK_DAYS, sessioni aggregate per giorno e ordinamento orario.
+ * Converte una sessione in data ISO per rendering mensile.
+ * Le sessioni legacy senza `date` restano supportate usando il prossimo giorno coerente con `day`.
+ */
+function resolveSessionDate(session, monthReference) {
+  if (typeof session.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(session.date)) {
+    return session.date;
+  }
+  const dayIndex = WEEK_DAYS.indexOf(session.day);
+  if (dayIndex < 0) return null;
+  const year = monthReference.getFullYear();
+  const month = monthReference.getMonth();
+  const monthStart = new Date(year, month, 1);
+  const startWeekDay = (monthStart.getDay() + 6) % 7;
+  const firstOccurrence = 1 + ((dayIndex - startWeekDay + 7) % 7);
+  const d = new Date(year, month, firstOccurrence);
+  return toLocalIsoDate(d);
+}
+
+function getWeekdayFromIsoDate(isoDate) {
+  return new Date(`${isoDate}T00:00:00`).toLocaleDateString("en-US", { weekday: "long" });
+}
+
+async function moveStudySession(sessionId, targetDate) {
+  const normalizedDay = getWeekdayFromIsoDate(targetDate);
+  const updated = await apiRequest(`/api/study-sessions/${sessionId}`, {
+    method: "PUT",
+    body: JSON.stringify({ date: targetDate, day: normalizedDay })
+  });
+  saveStudyPlan(getStudyPlan().map((item) => (item.id === sessionId ? updated : item)));
+}
+
+/**
+ * Vista mensile piano studio: header giorni + celle mese con sessioni.
  * @param {HTMLElement|null} containerEl
  * @param {boolean} showDeleteButton se true mostra delete su ogni item (tab Studio)
+ * @param {Date} monthReference mese da mostrare
  */
-function renderStudyBoard(containerEl, showDeleteButton) {
+function renderStudyBoard(containerEl, showDeleteButton, monthReference) {
   if (!containerEl) return;
   const plan = getStudyPlan();
   containerEl.innerHTML = "";
+  const year = monthReference.getFullYear();
+  const month = monthReference.getMonth();
+  const localeTag = CALENDAR_LOCALES[state.profile.language] || "it-IT";
+  if (studyMonthTitleEl && showDeleteButton) {
+    studyMonthTitleEl.textContent = monthReference.toLocaleDateString(localeTag, { month: "long", year: "numeric" });
+  }
 
-  WEEK_DAYS.forEach((day) => {
-    const column = document.createElement("div");
-    column.className = "study-column";
-    const title = document.createElement("h3");
-    title.textContent = getLocalizedDay(day);
-    column.appendChild(title);
+  const byDate = new Map();
+  plan.forEach((session) => {
+    const isoDate = resolveSessionDate(session, monthReference);
+    if (!isoDate) return;
+    const dateObj = new Date(`${isoDate}T00:00:00`);
+    if (ui.studyFilterMode === "month" && (dateObj.getFullYear() !== year || dateObj.getMonth() !== month)) return;
+    const list = byDate.get(isoDate) || [];
+    list.push(session);
+    byDate.set(isoDate, list);
+  });
+  if (studyFilterWrapEl) studyFilterWrapEl.classList.toggle("hidden", !showDeleteButton);
+  if (showDeleteButton) {
+    studyFilterMonthBtn?.classList.toggle("active", ui.studyFilterMode === "month");
+    studyFilterAllBtn?.classList.toggle("active", ui.studyFilterMode === "all");
+  }
 
-    const sessions = plan
-      .filter((item) => item.day === day)
-      .sort((a, b) => a.start.localeCompare(b.start));
+  CALENDAR_WEEK_DAYS.forEach((dayKey) => {
+    const head = document.createElement("div");
+    head.className = "calendar-weekday";
+    head.textContent = t(`daysShort.${dayKey}`);
+    containerEl.appendChild(head);
+  });
 
-    if (sessions.length === 0) {
-      const empty = document.createElement("p");
-      empty.className = "empty-text";
-      empty.textContent = getNoSessionLabel();
-      column.appendChild(empty);
-    } else {
+  const firstOfMonth = new Date(year, month, 1);
+  const startIndex = (firstOfMonth.getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  for (let i = 0; i < startIndex; i += 1) {
+    const empty = document.createElement("div");
+    empty.className = "calendar-day muted";
+    containerEl.appendChild(empty);
+  }
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const isoDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const sessions = (byDate.get(isoDate) || []).sort((a, b) => a.start.localeCompare(b.start));
+    const cell = document.createElement("div");
+    cell.className = "calendar-day";
+    cell.dataset.studyDate = isoDate;
+    if (showDeleteButton) cell.classList.add("study-dropzone");
+    const todayIso = getTodayIsoDate();
+    if (isoDate === todayIso) cell.classList.add("today");
+    if (isoDate < todayIso) cell.classList.add("study-day-past");
+    const dayNumber = document.createElement("p");
+    dayNumber.className = "calendar-day-number";
+    dayNumber.textContent = String(day);
+    cell.appendChild(dayNumber);
+    if (sessions.length > 0) {
       sessions.forEach((session) => {
         const item = document.createElement("div");
         item.className = "study-item";
-        const descriptionHtml = session.description
-          ? `<p class="study-item-description">${session.description}</p>`
-          : "";
+        item.draggable = showDeleteButton;
+        item.dataset.sessionId = session.id;
+        const descriptionHtml = session.description ? `<p class="study-item-description">${session.description}</p>` : "";
         const deleteBtnHtml = showDeleteButton
           ? `<button class="delete-btn" data-session-id="${session.id}" type="button">${t("study.deleteBtn")}</button>`
           : "";
@@ -1147,11 +1293,42 @@ function renderStudyBoard(containerEl, showDeleteButton) {
           ${descriptionHtml}
           ${deleteBtnHtml}
         `;
-        column.appendChild(item);
+        cell.appendChild(item);
       });
     }
+    containerEl.appendChild(cell);
+  }
 
-    containerEl.appendChild(column);
+  if (!showDeleteButton || ui.studyFilterMode !== "all") return;
+  const extraDates = Array.from(byDate.keys())
+    .filter((isoDate) => {
+      const d = new Date(`${isoDate}T00:00:00`);
+      return d.getFullYear() !== year || d.getMonth() !== month;
+    })
+    .sort();
+  extraDates.forEach((isoDate) => {
+    const sessions = (byDate.get(isoDate) || []).sort((a, b) => a.start.localeCompare(b.start));
+    const cell = document.createElement("div");
+    cell.className = "calendar-day study-day-out-month study-dropzone";
+    cell.dataset.studyDate = isoDate;
+    const label = document.createElement("p");
+    label.className = "calendar-day-number";
+    label.textContent = new Date(`${isoDate}T00:00:00`).toLocaleDateString(CALENDAR_LOCALES[state.profile.language] || "it-IT");
+    cell.appendChild(label);
+    sessions.forEach((session) => {
+      const item = document.createElement("div");
+      item.className = "study-item";
+      item.draggable = true;
+      item.dataset.sessionId = session.id;
+      item.innerHTML = `
+        <strong>${session.subject}</strong>
+        <p class="study-item-time">${session.start} - ${session.end}</p>
+        ${session.description ? `<p class="study-item-description">${session.description}</p>` : ""}
+        <button class="delete-btn" data-session-id="${session.id}" type="button">${t("study.deleteBtn")}</button>
+      `;
+      cell.appendChild(item);
+    });
+    containerEl.appendChild(cell);
   });
 }
 
@@ -1540,16 +1717,16 @@ nextMonthBtn.addEventListener("click", () => {
 /** Aggiungi sessione studio — UUID generato nel client come richiesto da API */
 studyForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const day = document.getElementById("study-day").value;
+  const date = studyDateInput?.value ?? "";
   const subject = document.getElementById("study-subject").value.trim();
   const description = document.getElementById("study-description").value.trim();
   const start = document.getElementById("study-start").value;
   const end = document.getElementById("study-end").value;
-  if (!subject || !start || !end || start >= end) return;
+  if (!subject || !date || !start || !end || start >= end) return;
 
   const session = {
     id: crypto.randomUUID(),
-    day,
+    date,
     subject,
     description,
     start,
@@ -1561,11 +1738,35 @@ studyForm.addEventListener("submit", async (event) => {
       body: JSON.stringify(session)
     });
     saveStudyPlan([...getStudyPlan(), created]);
+    const selectedDate = new Date(`${date}T00:00:00`);
+    if (!Number.isNaN(selectedDate.getTime())) {
+      currentStudyCalendarDate.setFullYear(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+    }
     studyForm.reset();
     render();
   } catch (error) {
     alert(error.message);
   }
+});
+
+prevStudyMonthBtn?.addEventListener("click", () => {
+  currentStudyCalendarDate.setMonth(currentStudyCalendarDate.getMonth() - 1);
+  renderStudyPlan();
+});
+
+nextStudyMonthBtn?.addEventListener("click", () => {
+  currentStudyCalendarDate.setMonth(currentStudyCalendarDate.getMonth() + 1);
+  renderStudyPlan();
+});
+
+studyFilterMonthBtn?.addEventListener("click", () => {
+  ui.studyFilterMode = "month";
+  renderStudyPlan();
+});
+
+studyFilterAllBtn?.addEventListener("click", () => {
+  ui.studyFilterMode = "all";
+  renderStudyPlan();
 });
 
 /** Rimozione singola sessione studio: il pulsante ha `data-session-id` assegnato in `renderStudyBoard` nel template HTML della riga. */
@@ -1580,6 +1781,54 @@ studyBoardEl.addEventListener("click", async (event) => {
     render();
   } catch (error) {
     alert(error.message);
+  }
+});
+
+studyBoardEl.addEventListener("dragstart", (event) => {
+  const item = event.target.closest(".study-item[data-session-id]");
+  if (!item) return;
+  ui.draggingStudySessionId = item.dataset.sessionId || null;
+  event.dataTransfer.effectAllowed = "move";
+  item.classList.add("study-item-dragging");
+});
+
+studyBoardEl.addEventListener("dragend", (event) => {
+  const item = event.target.closest(".study-item");
+  if (item) item.classList.remove("study-item-dragging");
+  ui.draggingStudySessionId = null;
+  studyBoardEl.querySelectorAll(".study-dropzone-active").forEach((el) => el.classList.remove("study-dropzone-active"));
+});
+
+studyBoardEl.addEventListener("dragover", (event) => {
+  const zone = event.target.closest(".study-dropzone[data-study-date]");
+  if (!zone || !ui.draggingStudySessionId) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "move";
+  studyBoardEl.querySelectorAll(".study-dropzone-active").forEach((el) => el.classList.remove("study-dropzone-active"));
+  zone.classList.add("study-dropzone-active");
+});
+
+studyBoardEl.addEventListener("drop", async (event) => {
+  const zone = event.target.closest(".study-dropzone[data-study-date]");
+  const sessionId = ui.draggingStudySessionId;
+  if (!zone || !sessionId) return;
+  event.preventDefault();
+  const targetDate = zone.dataset.studyDate;
+  const existing = getStudyPlan().find((item) => item.id === sessionId);
+  const currentDate = existing ? resolveSessionDate(existing, currentStudyCalendarDate) : null;
+  if (!targetDate || currentDate === targetDate) {
+    zone.classList.remove("study-dropzone-active");
+    return;
+  }
+  try {
+    await moveStudySession(sessionId, targetDate);
+    renderStudyPlan();
+    renderHomeStudyPlan();
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    ui.draggingStudySessionId = null;
+    studyBoardEl.querySelectorAll(".study-dropzone-active").forEach((el) => el.classList.remove("study-dropzone-active"));
   }
 });
 
@@ -1635,6 +1884,22 @@ settingsTabEl.addEventListener("click", (event) => {
     return;
   }
 
+  const studyPlanPaletteBtn = event.target.closest("[data-study-plan-palette]");
+  if (studyPlanPaletteBtn) {
+    getProfileForUi().studyWeekPlanColor = studyPlanPaletteBtn.dataset.studyPlanPalette;
+    applyTheme(getCurrentTheme());
+    syncProfileInputs();
+    return;
+  }
+
+  const studyExamPaletteBtn = event.target.closest("[data-study-exam-palette]");
+  if (studyExamPaletteBtn) {
+    getProfileForUi().studyWeekExamColor = studyExamPaletteBtn.dataset.studyExamPalette;
+    applyTheme(getCurrentTheme());
+    syncProfileInputs();
+    return;
+  }
+
   const gradBtn = event.target.closest("[data-grad-preset]");
   if (gradBtn) {
     graduationTargetInput.value = gradBtn.dataset.gradPreset;
@@ -1674,12 +1939,18 @@ saveSettingsBtn.addEventListener("click", async () => {
   }
   const totalCfu = Number(totalCfuInput.value);
   const graduationTarget = Number(graduationTargetInput.value);
+  const studyWeekPlanColor = String(settingsDraftProfile.studyWeekPlanColor || DEFAULT_PROFILE.studyWeekPlanColor);
+  const studyWeekExamColor = String(settingsDraftProfile.studyWeekExamColor || DEFAULT_PROFILE.studyWeekExamColor);
   if (!Number.isFinite(totalCfu) || totalCfu <= 0) return;
   if (!Number.isFinite(graduationTarget) || graduationTarget < 66 || graduationTarget > 110) return;
-  Object.assign(settingsDraftProfile, { totalCfu, graduationTarget });
+  if (!Object.prototype.hasOwnProperty.call(STUDY_WEEK_COLOR_PRESETS, studyWeekPlanColor)) return;
+  if (!Object.prototype.hasOwnProperty.call(STUDY_WEEK_COLOR_PRESETS, studyWeekExamColor)) return;
+  Object.assign(settingsDraftProfile, { totalCfu, graduationTarget, studyWeekPlanColor, studyWeekExamColor });
   const profile = {
     language: settingsDraftProfile.language,
     themePreset: settingsDraftProfile.themePreset,
+    studyWeekPlanColor: settingsDraftProfile.studyWeekPlanColor,
+    studyWeekExamColor: settingsDraftProfile.studyWeekExamColor,
     degreePath: settingsDraftProfile.degreePath,
     totalCfu: settingsDraftProfile.totalCfu,
     graduationTarget: settingsDraftProfile.graduationTarget
@@ -1868,47 +2139,6 @@ clearSimBtn.addEventListener("click", async () => {
   }
 });
 
-/**
- * Tab Richieste: POST `/api/feature-requests` (auth obbligatoria).
- * Il server salva sempre su SQLite; se SMTP è configurato e l'invio riesce, `emailed: true`.
- * Altrimenti `emailStatus` indica il motivo (messaggio tradotto sotto il form).
- */
-featureRequestForm?.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const subject = featureRequestSubject?.value.trim() ?? "";
-  const message = featureRequestMessage?.value.trim() ?? "";
-  if (!subject || !message) {
-    if (featureRequestStatusEl) featureRequestStatusEl.textContent = t("requests.validation");
-    return;
-  }
-  if (featureRequestStatusEl) featureRequestStatusEl.textContent = "";
-  try {
-    const data = await apiRequest("/api/feature-requests", {
-      method: "POST",
-      body: JSON.stringify({ subject, message })
-    });
-    featureRequestForm?.reset();
-    if (featureRequestStatusEl) {
-      if (data.emailed) {
-        featureRequestStatusEl.textContent = t("requests.successEmailed");
-      } else {
-        const hintKey =
-          data.emailStatus === "missing_smtp_password"
-            ? "requests.hintSmtpPassword"
-            : data.emailStatus === "missing_smtp_host"
-              ? "requests.hintSmtpHost"
-              : data.emailStatus === "smtp_error"
-                ? "requests.hintSmtpFailed"
-                : "requests.successQueued";
-        featureRequestStatusEl.textContent = t(hintKey);
-      }
-    }
-  } catch (error) {
-    alert(error.message);
-    if (featureRequestStatusEl) featureRequestStatusEl.textContent = "";
-  }
-});
-
 setDeviceMode();
 syncGradeInputByStatus();
 /**
@@ -1935,6 +2165,7 @@ async function loadAppData() {
   state.studyPlan = (data.studyPlan || []).map((session) => ({
     ...session,
     day: normalizeStudyDay(session.day),
+    date: typeof session.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(session.date) ? session.date : null,
     description: session.description || ""
   }));
   state.simulatedExams = (data.simulatedExams || []).map((exam) => ({
@@ -1943,6 +2174,14 @@ async function loadAppData() {
   }));
   state.targetGpa = Number.isFinite(data.targetGpa) ? data.targetGpa : 0;
   state.profile = data.profile ? { ...DEFAULT_PROFILE, ...data.profile } : { ...DEFAULT_PROFILE };
+  if (
+    !state.profile.studyWeekPlanColor &&
+    !state.profile.studyWeekExamColor &&
+    typeof state.profile.studyWeekPalette === "string"
+  ) {
+    state.profile.studyWeekPlanColor = state.profile.studyWeekPalette;
+    state.profile.studyWeekExamColor = state.profile.studyWeekPalette;
+  }
   if (!data.profile?.language) {
     state.profile.language = browserPreferredLanguage;
   } else if (!SUPPORTED_LANGUAGES.includes(state.profile.language)) {

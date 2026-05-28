@@ -216,7 +216,9 @@ function registerApiRoutes(app) {
       .all(req.user.id)
       .map(toExamRow);
     const studyPlan = db
-      .prepare("SELECT * FROM study_sessions WHERE user_id = ? ORDER BY day, start_time")
+      .prepare(
+        "SELECT * FROM study_sessions WHERE user_id = ? ORDER BY COALESCE(session_date, '9999-12-31'), day, start_time"
+      )
       .all(req.user.id)
       .map(toStudyRow);
     const simulatedExams = db
@@ -342,18 +344,32 @@ function registerApiRoutes(app) {
    * POST: confronto stringale `start < end` (formato HH:MM coerente con client); id univoco UUID.
    * --------------------------------------------------------------------------- */
   app.post("/api/study-sessions", requireAuth, (req, res) => {
-    const { id, day, subject, description, start, end } = req.body;
-    if (!id || !day || !subject || !start || !end) {
+    const { id, day, date, subject, description, start, end } = req.body;
+    const safeDate = typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
+    const safeDay = String(day || "").trim();
+    if (!id || !subject || !start || !end || (!safeDate && !safeDay)) {
       return res.status(400).json({ error: "Missing study session fields." });
     }
     if (start >= end) {
       return res.status(400).json({ error: "Start time must be before end time." });
     }
 
+    const dayFromDate = safeDate
+      ? new Date(`${safeDate}T00:00:00`).toLocaleDateString("en-US", { weekday: "long" })
+      : safeDay;
+    const normalizedDay = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].includes(
+      dayFromDate
+    )
+      ? dayFromDate
+      : "";
+    if (!normalizedDay) {
+      return res.status(400).json({ error: "Invalid study session day/date." });
+    }
+
     db.prepare(
-      `INSERT INTO study_sessions (id, user_id, day, subject, description, start_time, end_time)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
-    ).run(id, req.user.id, day, subject.trim(), (description || "").trim(), start, end);
+      `INSERT INTO study_sessions (id, user_id, day, session_date, subject, description, start_time, end_time)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(id, req.user.id, normalizedDay, safeDate, subject.trim(), (description || "").trim(), start, end);
 
     const inserted = db
       .prepare("SELECT * FROM study_sessions WHERE id = ? AND user_id = ?")
@@ -364,6 +380,37 @@ function registerApiRoutes(app) {
   app.delete("/api/study-sessions/:id", requireAuth, (req, res) => {
     db.prepare("DELETE FROM study_sessions WHERE id = ? AND user_id = ?").run(req.params.id, req.user.id);
     return res.status(204).send();
+  });
+
+  app.put("/api/study-sessions/:id", requireAuth, (req, res) => {
+    const id = String(req.params.id || "").trim();
+    const date = String(req.body.date || "").trim();
+    const day = String(req.body.day || "").trim();
+    if (!id || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ error: "Invalid study session update payload." });
+    }
+    const normalizedDay = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].includes(day)
+      ? day
+      : "";
+    if (!normalizedDay) {
+      return res.status(400).json({ error: "Invalid study session day." });
+    }
+    const existing = db
+      .prepare("SELECT id FROM study_sessions WHERE id = ? AND user_id = ?")
+      .get(id, req.user.id);
+    if (!existing) {
+      return res.status(404).json({ error: "Study session not found." });
+    }
+    db.prepare("UPDATE study_sessions SET day = ?, session_date = ? WHERE id = ? AND user_id = ?").run(
+      normalizedDay,
+      date,
+      id,
+      req.user.id
+    );
+    const updated = db
+      .prepare("SELECT * FROM study_sessions WHERE id = ? AND user_id = ?")
+      .get(id, req.user.id);
+    return res.json(toStudyRow(updated));
   });
 
   app.delete("/api/study-sessions", requireAuth, (req, res) => {
@@ -493,12 +540,19 @@ function registerApiRoutes(app) {
     }
     const allowedLanguages = ["it", "en", "fr", "de", "ro", "es"];
     const allowedThemePresets = ["classic", "forest", "sunset", "dark", "night", "sky"];
+    const allowedStudyWeekColors = ["violet", "forest", "sunset", "dark", "rose", "amber", "pink"];
     const allowedDegreePaths = ["bachelor", "master", "postgraduate", "custom"];
     if (!allowedLanguages.includes(profile.language)) {
       return res.status(400).json({ error: "Invalid language." });
     }
     if (!allowedThemePresets.includes(profile.themePreset)) {
       return res.status(400).json({ error: "Invalid theme preset." });
+    }
+    if (!allowedStudyWeekColors.includes(profile.studyWeekPlanColor)) {
+      return res.status(400).json({ error: "Invalid study week plan color." });
+    }
+    if (!allowedStudyWeekColors.includes(profile.studyWeekExamColor)) {
+      return res.status(400).json({ error: "Invalid study week exam color." });
     }
     if (!allowedDegreePaths.includes(profile.degreePath)) {
       return res.status(400).json({ error: "Invalid degree path." });
@@ -513,7 +567,6 @@ function registerApiRoutes(app) {
     ) {
       return res.status(400).json({ error: "Invalid graduation target." });
     }
-
     db.prepare(
       `INSERT INTO user_settings (user_id, key, value)
        VALUES (?, 'profile', ?)

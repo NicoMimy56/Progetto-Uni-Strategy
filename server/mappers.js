@@ -32,12 +32,13 @@ function toExamRow(row) {
  * Trasforma una riga della tabella `study_sessions`.
  * `start` / `end` sono stringhe orario come salvate dal client (es. "09:00").
  * @param {object} row
- * @returns {{ id: string, day: string, subject: string, description: string, start: string, end: string }}
+ * @returns {{ id: string, day: string, date: string|null, subject: string, description: string, start: string, end: string }}
  */
 function toStudyRow(row) {
   return {
     id: row.id,
     day: row.day,
+    date: row.session_date || null,
     subject: row.subject,
     description: row.description || "",
     start: row.start_time,

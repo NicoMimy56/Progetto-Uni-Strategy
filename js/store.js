@@ -59,11 +59,15 @@ export const studyTimePickerState = {
 export const ui = {
   settingsToastTimer: null,
   authMode: "login",
-  trendRafId: null
+  trendRafId: null,
+  studyFilterMode: "month",
+  draggingStudySessionId: null
 };
 
 /** Mese del calendario mostrato in UI: mutare `currentCalendarDate` (es. dai pulsanti mese in `app.js`), poi `renderCalendar`. */
 export const currentCalendarDate = new Date();
+/** Mese mostrato nella tab Piano Studio (vista mensile). */
+export const currentStudyCalendarDate = new Date();
 
 /** Valore obiettivo media /30 in `state.targetGpa`; `NaN` viene trattato come 0. */
 export function getTargetGpa() {

@@ -130,6 +130,9 @@ if (!hasColumn("exams", "user_id")) {
 if (!hasColumn("study_sessions", "user_id")) {
   db.exec("ALTER TABLE study_sessions ADD COLUMN user_id INTEGER");
 }
+if (!hasColumn("study_sessions", "session_date")) {
+  db.exec("ALTER TABLE study_sessions ADD COLUMN session_date TEXT");
+}
 
 /* Verifica email in registrazione: colonne aggiunte in un secondo momento; utenti già presenti restano considerati verificati. */
 if (!hasColumn("users", "email_verified_at")) {

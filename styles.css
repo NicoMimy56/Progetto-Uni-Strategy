@@ -800,29 +800,54 @@ html.theme-dark .home-sort-segment.active {
 
 .study-board {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.55rem;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.5rem;
 }
 
-.study-column {
+#home-study-board {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.home-week-day {
   background: #f8fbff;
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 0.55rem;
+  padding: 0.45rem;
+  min-height: 120px;
 }
 
-.study-column h3 {
-  margin: 0 0 0.42rem;
-  font-size: 0.85rem;
+.home-week-day.today {
+  border-color: var(--primary);
+}
+
+.home-week-day h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.76rem;
   color: #2e4f86;
 }
 
+.home-week-item {
+  margin-top: 0.28rem;
+  padding: 0.35rem;
+  border-radius: 8px;
+  font-size: 0.72rem;
+}
+
+.home-week-item.study {
+  background: var(--home-study-session-bg, #eaf1ff);
+}
+
+.home-week-item.exam {
+  background: var(--home-study-exam-bg, #ffe8ea);
+}
+
 .study-item {
-  margin-bottom: 0.35rem;
-  padding: 0.45rem;
+  margin-top: 0.28rem;
+  padding: 0.35rem;
   border-radius: 8px;
   background: #eaf1ff;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
+  cursor: grab;
 }
 
 .study-item-time {
@@ -832,7 +857,7 @@ html.theme-dark .home-sort-segment.active {
 .study-item-description {
   margin: 0.2rem 0 0;
   color: var(--muted);
-  font-size: 0.74rem;
+  font-size: 0.7rem;
 }
 
 .study-item button {
@@ -844,8 +869,27 @@ html.theme-dark .home-sort-segment.active {
 
 .empty-text {
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: 0.7rem;
   margin: 0;
+}
+
+.study-day-past {
+  background: #f8f9fc;
+  border-color: color-mix(in srgb, var(--border) 78%, #ffffff);
+}
+
+.study-dropzone-active {
+  outline: 2px dashed var(--primary);
+  outline-offset: -2px;
+}
+
+.study-item-dragging {
+  opacity: 0.65;
+  cursor: grabbing;
+}
+
+.study-day-out-month {
+  background: color-mix(in srgb, #eef3ff 64%, #ffffff);
 }
 
 .settings-actions {

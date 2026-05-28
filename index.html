@@ -89,7 +89,6 @@
         <button type="button" class="tab-btn" data-tab="manage" data-i18n="tabs.manage">Gestione Esami</button>
         <button type="button" class="tab-btn" data-tab="calendar" data-i18n="tabs.calendar">Calendario</button>
         <button type="button" class="tab-btn" data-tab="study" data-i18n="tabs.study">Piano Studio</button>
-        <button type="button" class="tab-btn" data-tab="requests" data-i18n="tabs.requests">Richieste</button>
         <button type="button" class="tab-btn" data-tab="settings" data-i18n="tabs.settings">Impostazioni</button>
       </nav>
 
@@ -130,7 +129,7 @@
 
           <section class="card full-width">
             <div class="table-head">
-              <h2 data-i18n="home.studyWeekTitle">Piano studio della settimana</h2>
+              <h2 data-i18n="home.studyWeekTitle">Organizzazione Settimanale</h2>
             </div>
             <div id="home-study-board" class="study-board"></div>
           </section>
@@ -335,16 +334,8 @@
             <h2 data-i18n="study.newSession">Nuova sessione studio</h2>
             <form id="study-form" class="form-grid">
               <label>
-                <span data-i18n="study.weekDay">Giorno</span>
-                <select id="study-day" required>
-                  <option value="Monday">Monday</option>
-                  <option value="Tuesday">Tuesday</option>
-                  <option value="Wednesday">Wednesday</option>
-                  <option value="Thursday">Thursday</option>
-                  <option value="Friday">Friday</option>
-                  <option value="Saturday">Saturday</option>
-                  <option value="Sunday">Sunday</option>
-                </select>
+                <span data-i18n="study.sessionDate">Data sessione</span>
+                <input type="text" id="study-date" data-i18n-placeholder="study.sessionDatePh" placeholder="" required />
               </label>
               <label>
                 <span data-i18n="study.subjectLabel">Esame / materia</span>
@@ -368,45 +359,23 @@
 
           <section class="card full-width">
             <div class="table-head">
-              <h2 data-i18n="study.weekTitle">Settimana di studio</h2>
+              <h2 data-i18n="study.monthTitle">Piano studio mensile</h2>
+              <div class="calendar-nav">
+                <button id="prev-study-month" type="button" data-i18n="calendar.prev">Mese prec.</button>
+                <p id="study-month-title"></p>
+                <button id="next-study-month" type="button" data-i18n="calendar.next">Mese succ.</button>
+              </div>
+              <div id="study-filter-wrap" class="list-filters">
+                <button id="study-filter-month" class="small-filter-btn active" type="button" data-i18n="study.filterMonth">
+                  Questo mese
+                </button>
+                <button id="study-filter-all" class="small-filter-btn" type="button" data-i18n="study.filterAll">
+                  Tutte
+                </button>
+              </div>
               <button id="clear-study-btn" class="delete-btn" type="button" data-i18n="study.clearPlan">Svuota piano</button>
             </div>
             <div id="study-board" class="study-board"></div>
-          </section>
-        </div>
-      </section>
-
-      <section id="requests-tab" class="tab-content">
-        <div class="layout">
-          <section class="card full-width">
-            <h2 data-i18n="requests.pageTitle">Richieste di implementazione</h2>
-            <p class="trend-helper-message" data-i18n="requests.pageHint"></p>
-            <form id="feature-request-form" class="form-grid">
-              <label>
-                <span data-i18n="requests.subjectLabel">Oggetto</span>
-                <input
-                  type="text"
-                  id="feature-request-subject"
-                  maxlength="200"
-                  required
-                  data-i18n-placeholder="requests.subjectPh"
-                  placeholder=""
-                />
-              </label>
-              <label>
-                <span data-i18n="requests.messageLabel">Descrizione</span>
-                <textarea
-                  id="feature-request-message"
-                  rows="6"
-                  maxlength="8000"
-                  required
-                  data-i18n-placeholder="requests.messagePh"
-                  placeholder=""
-                ></textarea>
-              </label>
-              <button type="submit" data-i18n="requests.submit">Invia richiesta</button>
-            </form>
-            <p id="feature-request-status" class="feature-request-status" aria-live="polite"></p>
           </section>
         </div>
       </section>
@@ -524,6 +493,42 @@
                 <span data-i18n="settings.themeSky">Amethyst</span>
               </button>
             </div>
+            <h4 class="settings-card-title" data-i18n="settings.studyColorsTitle">Colori calendario organizzazione</h4>
+            <p class="settings-card-hint" data-i18n="settings.studyColorsHint"></p>
+            <h5 class="settings-card-title" data-i18n="settings.studyExamColorTitle">Colore degli esami</h5>
+            <div class="settings-tiles settings-tiles-theme" role="group">
+              <button type="button" class="settings-tile settings-tile-theme" data-study-exam-palette="rose">
+                <span class="theme-swatch swatch-sunset"></span>
+                <span data-i18n="settings.studyPaletteRose">Rose</span>
+              </button>
+              <button type="button" class="settings-tile settings-tile-theme" data-study-exam-palette="amber">
+                <span class="theme-swatch swatch-night"></span>
+                <span data-i18n="settings.studyPaletteAmber">Amber</span>
+              </button>
+              <button type="button" class="settings-tile settings-tile-theme" data-study-exam-palette="pink">
+                <span class="theme-swatch swatch-sky"></span>
+                <span data-i18n="settings.studyPalettePink">Pink</span>
+              </button>
+            </div>
+            <h5 class="settings-card-title" data-i18n="settings.studyPlanColorTitle">Colore piano studi</h5>
+            <div class="settings-tiles settings-tiles-theme" role="group">
+              <button type="button" class="settings-tile settings-tile-theme" data-study-plan-palette="violet">
+                <span class="theme-swatch swatch-classic"></span>
+                <span data-i18n="settings.studyPaletteViolet">Violet</span>
+              </button>
+              <button type="button" class="settings-tile settings-tile-theme" data-study-plan-palette="forest">
+                <span class="theme-swatch swatch-forest"></span>
+                <span data-i18n="settings.studyPaletteForest">Forest</span>
+              </button>
+              <button type="button" class="settings-tile settings-tile-theme" data-study-plan-palette="sunset">
+                <span class="theme-swatch swatch-sunset"></span>
+                <span data-i18n="settings.studyPaletteSunset">Sunset</span>
+              </button>
+              <button type="button" class="settings-tile settings-tile-theme" data-study-plan-palette="dark">
+                <span class="theme-swatch swatch-dark"></span>
+                <span data-i18n="settings.studyPaletteDark">Dark</span>
+              </button>
+            </div>
           </section>
         </div>
       </section>
@@ -535,6 +540,6 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
     <!-- Client modulare ES2020: vedi cartella `js/` (constants, store, dom, api, academic + app.js) -->
-    <script type="module" src="./js/app.js?v=2026-05-07-email-verify"></script>
+    <script type="module" src="./js/app.js?v=2026-05-28-weekly-org-split-colors"></script>
   </body>
 </html>

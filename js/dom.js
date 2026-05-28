@@ -54,6 +54,13 @@ export const studyForm = document.getElementById("study-form");
 export const studyBoardEl = document.getElementById("study-board");
 export const homeStudyBoardEl = document.getElementById("home-study-board");
 export const clearStudyBtn = document.getElementById("clear-study-btn");
+export const studyDateInput = document.getElementById("study-date");
+export const prevStudyMonthBtn = document.getElementById("prev-study-month");
+export const nextStudyMonthBtn = document.getElementById("next-study-month");
+export const studyMonthTitleEl = document.getElementById("study-month-title");
+export const studyFilterWrapEl = document.getElementById("study-filter-wrap");
+export const studyFilterMonthBtn = document.getElementById("study-filter-month");
+export const studyFilterAllBtn = document.getElementById("study-filter-all");
 
 /* --- Navigazione tab principale --- */
 export const tabButtons = document.querySelectorAll(".tab-btn");
@@ -92,10 +99,5 @@ export const authLoginForm = document.getElementById("auth-login-form");
 export const authRegisterForm = document.getElementById("auth-register-form");
 export const logoutBtn = document.getElementById("logout-btn");
 
-/* Tab Richieste / feature request → POST /api/feature-requests */
-export const featureRequestForm = document.getElementById("feature-request-form");
 export const authResendWrap = document.getElementById("auth-resend-wrap");
 export const authResendBtn = document.getElementById("auth-resend-btn");
-export const featureRequestSubject = document.getElementById("feature-request-subject");
-export const featureRequestMessage = document.getElementById("feature-request-message");
-export const featureRequestStatusEl = document.getElementById("feature-request-status");

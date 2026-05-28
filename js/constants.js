@@ -25,7 +25,7 @@ export const CALENDAR_WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Su
  * Suffisso query string nei `fetch('/locales/xx.json?v=…')`: incrementa quando cambi traduzioni
  * così il browser non serve una copia stale dalla cache durante lo sviluppo.
  */
-export const APP_I18N_VERSION = "2026-05-07-verify-email";
+export const APP_I18N_VERSION = "2026-05-28-weekly-org-split-colors";
 
 /** Lingue per cui esiste effettivamente un file `locales/<codice>.json` nel progetto */
 export const SUPPORTED_LANGUAGES = ["it", "en", "fr", "de", "ro", "es"];
@@ -109,6 +109,17 @@ export const THEME_PRESETS = {
   }
 };
 
+/** Palette colori per la sezione Home "Organizzazione Settimanale" (sessioni studio vs esami). */
+export const STUDY_WEEK_COLOR_PRESETS = {
+  violet: "#eaf1ff",
+  forest: "#e6f7ef",
+  sunset: "#fff0e8",
+  dark: "#26344f",
+  rose: "#ffe8ea",
+  amber: "#ffeccc",
+  pink: "#ffe5f3"
+};
+
 /**
  * Profilo usato finché il server non restituisce `profile` in `/api/bootstrap`
  * o dopo logout locale per resettare la UI.
@@ -116,6 +127,8 @@ export const THEME_PRESETS = {
 export const DEFAULT_PROFILE = {
   language: "it",
   themePreset: "classic",
+  studyWeekPlanColor: "violet",
+  studyWeekExamColor: "rose",
   degreePath: "bachelor",
   totalCfu: 180,
   graduationTarget: 100
