@@ -1666,16 +1666,41 @@ function render() {
   }
 
   /**
-   * «Obiettivo media» (campo Home): se `targetGpa` > 0, calcola la media aritmetica minima sulle CFU residue
-   * affinché la media ponderata totale raggiunga il target, con modello lineare (target×ΣCFU − Σ(voto×CFU completati)) / CFU rimanenti.
+   * «Obiettivo media» (campo Home): media minima sui CFU ancora senza voto (da sostenere + non ancora inseriti)
+   * affinché la media ponderata totale raggiunga il target:
+   * (target×ΣCFU − Σ(voto×CFU con voto)) / CFU ancora da valutare.
    */
   targetAverageHomeEl.value = targetGpa > 0 ? targetGpa.toFixed(2) : "";
   if (targetGpa > 0) {
-    const neededForFuture = (targetGpa * total - gpa * acquired) / Math.max(1, remaining);
-    targetAverageTipEl.textContent = t("targetTip", {
-      target: targetGpa.toFixed(2),
-      needed: neededForFuture.toFixed(2)
-    });
+    const gradedCompleted = exams.filter(
+      (e) => e.status === "Completed" && Number.isFinite(e.grade)
+    );
+    const gradedCredits = gradedCompleted.reduce((acc, e) => acc + e.credits, 0);
+    const weightedSum = gradedCompleted.reduce((acc, e) => acc + e.grade * e.credits, 0);
+    const creditsToGo = Math.max(total - gradedCredits, 0);
+    if (creditsToGo === 0) {
+      targetAverageTipEl.textContent = t("targetTipAllGraded", {
+        target: targetGpa.toFixed(2),
+        current: gpa.toFixed(2)
+      });
+    } else {
+      const neededForFuture = (targetGpa * total - weightedSum) / creditsToGo;
+      if (neededForFuture > 30) {
+        targetAverageTipEl.textContent = t("targetTipUnreachable", {
+          target: targetGpa.toFixed(2),
+          needed: neededForFuture.toFixed(2)
+        });
+      } else if (neededForFuture <= 18) {
+        targetAverageTipEl.textContent = t("targetTipAlreadyOnTrack", {
+          target: targetGpa.toFixed(2)
+        });
+      } else {
+        targetAverageTipEl.textContent = t("targetTip", {
+          target: targetGpa.toFixed(2),
+          needed: neededForFuture.toFixed(2)
+        });
+      }
+    }
   } else {
     targetAverageTipEl.textContent = t("targetPrompt");
   }

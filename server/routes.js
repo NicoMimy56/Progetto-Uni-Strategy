@@ -148,12 +148,12 @@ function registerApiRoutes(app) {
     const verifyToken = crypto.randomBytes(32).toString("hex");
     const verifyExpires = Date.now() + 48 * 60 * 60 * 1000;
     const result = db
-      .prepare(
-        `INSERT INTO users (email, password_hash, password_salt, email_verified_at, email_verify_token, email_verify_expires_at)
-         VALUES (?, ?, ?, NULL, ?, ?)`
-      )
-      .run(email, hash, salt, verifyToken, verifyExpires);
-    const userId = Number(result.lastInsertRowid);
+    .prepare(
+      `INSERT INTO users (email, password_hash, password_salt, email_verified_at, email_verify_token, email_verify_expires_at)
+      VALUES (?, ?, ?, CURRENT_TIMESTAMP, NULL, NULL)`
+    )
+    .run(email, hash, salt);
+        const userId = Number(result.lastInsertRowid);
     consumeInviteCode(inviteCode);
     const verifyUrl = `${getAppPublicBaseUrl()}/?verify-email=${encodeURIComponent(verifyToken)}`;
     const mailResult = await sendVerificationEmail({ toEmail: email, verifyUrl });
