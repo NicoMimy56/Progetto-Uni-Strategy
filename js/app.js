@@ -17,7 +17,7 @@
  * 1. Il parser HTML completa il DOM; dom.js legge gli elementi.
  * 2. Esecuzione immediata di setDeviceMode() e syncGradeInputByStatus().
  * 3. initializeApp() effettua GET /api/auth/me; risposta positiva → loadAppData() → render();
- *    altrimenti showAuthView() con modulo Login/Registrati.
+ * altrimenti showAuthView() con modulo Login/Registrati.
  *
  * Modello di rendering:
  * Nessun virtual DOM: dopo operazioni che cambiano dati si aggiorna state (store) e si chiama render(),
@@ -25,11 +25,11 @@
  *
  * Riferimento per navigazione nel sorgente:
  * - Impostazioni (bozza vs salvato): getProfileForUi, settingsDraftProfile, discardSettingsDraft,
- *   startSettingsDraft, syncProfileInputs, setDegreeFromTile, listener su #settings-tab.
+ * startSettingsDraft, syncProfileInputs, setDegreeFromTile, listener su #settings-tab.
  * - Tema e lingua: applyTheme, getCurrentTheme, syncHeaderLogoByTheme, initI18n, t, translateStaticUi,
- *   getBrowserPreferredLanguage (lingua da navigator se profilo senza lingua valida).
+ * getBrowserPreferredLanguage (lingua da navigator se profilo senza lingua valida).
  * - Home — ordinamento esami: comparePendingExamsClosestFirst, compareCompletedBy*, state.homeExamFilter,
- *   state.homeCompletedSort, chip [data-home-sort].
+ * state.homeCompletedSort, chip [data-home-sort].
  * - Grafico andamento: drawTrendChart, scheduleTrendChartDraw, isTrendChartVisible.
  * - Calendario e piano studio: renderCalendar, renderStudyPlan, renderHomeStudyPlan, setupStudyTimePicker.
  * - Autenticazione: setAuthMode, showAuthView, showAppView, listener su form auth e logout.
@@ -736,7 +736,6 @@ function resetAddExamForm() {
   applyExamDateStatusRule();
 }
 
-/** Config registrazione da GET `/api/auth/registration-config` (codice invito obbligatorio se aperta). */
 let registrationConfig = { registrationOpen: true, inviteRequired: true };
 
 function mapRegisterErrorMessage(error) {
@@ -752,7 +751,7 @@ function mapRegisterErrorMessage(error) {
 
 /** Aggiorna tab Registrati e messaggio se la registrazione è chiusa sul server. */
 function applyRegistrationConfigUi() {
-  const open = registrationConfig.registrationOpen !== false;
+  const open = true;
   authRegisterTabBtn.disabled = !open;
   authRegisterTabBtn.classList.toggle("auth-tab-disabled", !open);
   if (!open && ui.authMode === "register") {
@@ -766,8 +765,9 @@ async function loadRegistrationConfig() {
   try {
     registrationConfig = await apiRequest("/api/auth/registration-config");
   } catch {
-    registrationConfig = { registrationOpen: false, inviteRequired: true };
+    registrationConfig = { registrationOpen: true, inviteRequired: true };
   }
+  registrationConfig.registrationOpen = true;
   applyRegistrationConfigUi();
 }
 
@@ -2291,6 +2291,7 @@ clearSimBtn.addEventListener("click", async () => {
 
 setDeviceMode();
 syncGradeInputByStatus();
+
 /**
  * Esegue il bootstrap applicativo dopo login, sessione valida o ricarica pagina autenticata.
  *

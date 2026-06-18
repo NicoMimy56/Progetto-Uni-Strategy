@@ -244,54 +244,34 @@ npm run reminders:run
 
 ---
 
-## 10. Da fare sul mini-server (quando sarà pronto)
+## 10. Deploy sul mini-server (CasaOS + Docker)
 
-Questa è la checklist **operativa** per il deploy in casa. Nulla di questo richiede di essere fatto sul PC di sviluppo finché non trasferisci il progetto.
+**Guida passo-passo:** vedi **`DEPLOY_CASAOS.md`**.
 
-### 10.1 Trasferimento progetto
+Con CasaOS + Raspberry Pi **usa Docker** (non PM2/systemd): `restart: unless-stopped` tiene l’app accesa 24/7.
 
-- Copiare la cartella del progetto sul mini-server (Git clone, USB, rsync, ecc.)
-- Installare **Node.js** (versione LTS compatibile con `better-sqlite3`)
-- `npm install` nella cartella progetto
-- Creare `.env` sul mini-server (non copiare password in chiaro su canali insicuri)
+### 10.1 Trasferimento
 
-### 10.2 Tenere l’app sempre accesa
+- Progetto in `/mnt/storage/UniStrategy` (cartella `Database` per il DB)
+- `docker compose up -d --build`
 
-- **systemd** (Linux) o **PM2**: servizio che riavvia Uni-Strategy al boot e dopo crash
-- Senza questo, promemoria e app non funzionano quando la macchina è spenta
+### 10.2 Database persistente
 
-### 10.3 Backup database
+- Volume `./Database` → `/data` nel container
+- Variabile `DATABASE_DIR=/data` → file `unistrategy.db` sopravvive ai rebuild
 
-- Cron giornaliero che copia `unistrategy.db` altrove (altro disco / NAS)
-- Il file è l’unica copia dei tuoi dati accademici
+### 10.3 `.env` sul Pi
 
-### 10.4 Fuso orario
+- SMTP, `REGISTRATION_INVITE_CODES`, `TZ=Europe/Rome`
+- `APP_BASE_URL=http://100.x.y.z:3000` (IP Tailscale del Raspberry)
 
-- Impostare `TZ=Europe/Rome` sul sistema o nel servizio
-- Così `CALENDAR_REMINDER_HOUR=8` significa le 8:00 italiane
+### 10.4 Tailscale + backup + promemoria
 
-### 10.5 Accesso da telefono fuori casa (senza dominio)
+- Tailscale su Pi e telefono per accesso fuori casa
+- Script `scripts/backup-database.sh` + cron notturno
+- Cron opzionale: `docker compose exec … npm run reminders:run`
 
-**Opzione consigliata: Tailscale**
-
-- Installi Tailscale sul mini-server e sul telefono
-- Accedi all’app con l’IP Tailscale del server (es. `http://100.x.x.x:3000`)
-- Non apri porte sul router verso Internet
-- Aggiorni `APP_BASE_URL` con quell’URL per i link nelle email (quando usi quell’accesso stabilmente)
-
-**In alternativa (dopo):** dominio + reverse proxy (Caddy/Nginx) + HTTPS con Let’s Encrypt
-
-### 10.6 Doppia sicurezza promemoria (consigliato)
-
-- Scheduler interno (già nel codice) **+** cron di sistema che esegue `npm run reminders:run` ogni mattina
-- Se il processo Node era spento alle 8:00, il cron recupera
-
-### 10.7 Sicurezza base
-
-- Codici invito lunghi e segreti
-- Valutare `REGISTRATION_INVITE_MAX_USES=1` per codici personali
-- Rate limit su login (da implementare — vedi sotto)
-- Cookie `Secure` quando userai HTTPS
+*(PM2/systemd: solo se **non** usi Docker.)*
 
 ---
 

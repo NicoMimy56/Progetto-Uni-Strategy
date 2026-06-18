@@ -16,7 +16,11 @@ const path = require("path");
 const Database = require("better-sqlite3");
 const { ROOT } = require("./paths");
 
-const dbPath = path.join(ROOT, "unistrategy.db");
+/** Cartella dati persistente (Docker/CasaOS: monta un volume su `/data` e imposta `DATABASE_DIR=/data`). */
+const dataDir = process.env.DATABASE_DIR
+  ? path.resolve(String(process.env.DATABASE_DIR))
+  : ROOT;
+const dbPath = path.join(dataDir, "unistrategy.db");
 const db = new Database(dbPath);
 
 /** WAL: file `-wal` affiancato al DB; migliora parallelismo in scenari read-heavy */

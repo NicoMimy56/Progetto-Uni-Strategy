@@ -1,0 +1,17 @@
+# CasaOS / Raspberry Pi — avvio: docker compose up -d --build
+# Cartella sul host: monta ./Database → /data (file unistrategy.db persistente).
+
+services:
+  unistrategy:
+    build: .
+    container_name: UniStrategyApp
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      TZ: Europe/Rome
+      DATABASE_DIR: /data
+    volumes:
+      - ./Database:/data
