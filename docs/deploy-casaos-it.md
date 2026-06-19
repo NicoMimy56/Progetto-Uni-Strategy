@@ -1,5 +1,7 @@
 # Deploy su Raspberry Pi + CasaOS (Docker)
 
+> Guida in italiano. Documentazione principale del progetto: [README.md](../README.md) (English).
+
 Guida pratica per il **Livello A**: app online 24/7, database persistente, accesso da telefono con Tailscale.
 
 ---
@@ -177,4 +179,4 @@ Cron (ogni notte alle 3:00):
 
 ---
 
-Vedi anche **GUIDA_PROGETTO.md** per funzionalità app e roadmap posticipata (Telegram, PWA, export, dominio).
+Vedi anche [README.md](../README.md) per panoramica funzionalità, configurazione `.env` e comandi generali.

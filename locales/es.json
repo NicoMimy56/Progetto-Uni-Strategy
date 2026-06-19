@@ -2,11 +2,16 @@
   "brandTagline": "Tu recorrido academico, totalmente bajo control.",
   "tabs": {
     "home": "Inicio",
+    "homeShort": "Inicio",
     "manage": "Examenes",
+    "manageShort": "Exam.",
     "calendar": "Calendario",
+    "calendarShort": "Cal.",
     "study": "Plan de estudio",
+    "studyShort": "Plan",
     "requests": "Peticiones",
-    "settings": "Configuracion"
+    "settings": "Configuracion",
+    "settingsShort": "Conf."
   },
   "requests": {
     "pageTitle": "Peticiones de funciones",
@@ -151,7 +156,9 @@
     "calcBtn": "Calcular nota requerida",
     "simNeed": "Nota requerida en el proximo examen: {{grade}}",
     "simTooHigh": "No es realista con este examen solo (nota requerida > 31).",
-    "simAlreadyThere": "Ya estas por encima del objetivo: con aprobar basta."
+    "simAlreadyThere": "Ya estas por encima del objetivo: con aprobar basta.",
+    "noExams": "No hay examenes anadidos.",
+    "noSimulated": "No hay examenes simulados."
   },
   "calendar": {
     "title": "Calendario de examenes",

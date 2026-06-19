@@ -2,11 +2,16 @@
   "brandTagline": "Ton parcours universitaire, sous controle.",
   "tabs": {
     "home": "Accueil",
+    "homeShort": "Accueil",
     "manage": "Examens",
+    "manageShort": "Exam.",
     "calendar": "Calendrier",
+    "calendarShort": "Cal.",
     "study": "Plan d'etude",
+    "studyShort": "Plan",
     "requests": "Demandes",
-    "settings": "Parametres"
+    "settings": "Parametres",
+    "settingsShort": "Param."
   },
   "requests": {
     "pageTitle": "Demandes de fonctionnalites",
@@ -151,7 +156,9 @@
     "calcBtn": "Calculer la note requise",
     "simNeed": "Note requise au prochain examen: {{grade}}",
     "simTooHigh": "Pas realiste avec ce seul examen (note requise > 31).",
-    "simAlreadyThere": "Tu es deja au-dessus de l'objectif: une note suffisante suffit."
+    "simAlreadyThere": "Tu es deja au-dessus de l'objectif: une note suffisante suffit.",
+    "noExams": "Aucun examen ajoute.",
+    "noSimulated": "Aucun examen simule."
   },
   "calendar": {
     "title": "Calendrier des examens",

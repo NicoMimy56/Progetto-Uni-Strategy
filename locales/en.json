@@ -2,11 +2,16 @@
   "brandTagline": "Your academic journey, fully under control.",
   "tabs": {
     "home": "Home",
+    "homeShort": "Home",
     "manage": "Exams",
+    "manageShort": "Exams",
     "calendar": "Calendar",
+    "calendarShort": "Cal.",
     "study": "Study plan",
+    "studyShort": "Study",
     "requests": "Requests",
-    "settings": "Settings"
+    "settings": "Settings",
+    "settingsShort": "Settings"
   },
   "requests": {
     "pageTitle": "Feature requests",
@@ -160,7 +165,9 @@
     "simCurrentVsSim": "Current GPA: {{current}} -> Simulated GPA: {{simulated}}",
     "simNeed": "Required grade on next exam: {{grade}}",
     "simTooHigh": "Not realistic with this exam alone (required grade > 31).",
-    "simAlreadyThere": "Already above target: passing grade is enough."
+    "simAlreadyThere": "Already above target: passing grade is enough.",
+    "noExams": "No exams added yet.",
+    "noSimulated": "No simulated exams yet."
   },
   "calendar": {
     "title": "Exam calendar",

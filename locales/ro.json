@@ -2,11 +2,16 @@
   "brandTagline": "Parcursul tau universitar, complet sub control.",
   "tabs": {
     "home": "Acasa",
+    "homeShort": "Acasa",
     "manage": "Examene",
+    "manageShort": "Exam.",
     "calendar": "Calendar",
+    "calendarShort": "Cal.",
     "study": "Plan de studiu",
+    "studyShort": "Plan",
     "requests": "Cereri",
-    "settings": "Setari"
+    "settings": "Setari",
+    "settingsShort": "Set."
   },
   "requests": {
     "pageTitle": "Cereri de implementare",
@@ -151,7 +156,9 @@
     "calcBtn": "Calculeaza nota necesara",
     "simNeed": "Nota necesara la urmatorul examen: {{grade}}",
     "simTooHigh": "Nerealist doar cu acest examen (nota necesara > 31).",
-    "simAlreadyThere": "Esti deja peste obiectiv: este suficient sa promovezi."
+    "simAlreadyThere": "Esti deja peste obiectiv: este suficient sa promovezi.",
+    "noExams": "Niciun examen adaugat.",
+    "noSimulated": "Niciun examen simulat."
   },
   "calendar": {
     "title": "Calendar examene",

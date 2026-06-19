@@ -15,11 +15,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Uni-Strategy</title>
     <link rel="icon" type="image/svg+xml" href="./assets/logo-tab.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
     />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=2026-06-20-visual-polish" />
   </head>
   <body>
     <!-- Schermata autenticazione: visibile finché non c’è sessione valida o finché app.js non chiama `showAppView`. -->
@@ -101,11 +107,26 @@
       </header>
 
       <nav class="tabs">
-        <button type="button" class="tab-btn active" data-tab="home" data-i18n="tabs.home">Home</button>
-        <button type="button" class="tab-btn" data-tab="manage" data-i18n="tabs.manage">Gestione Esami</button>
-        <button type="button" class="tab-btn" data-tab="calendar" data-i18n="tabs.calendar">Calendario</button>
-        <button type="button" class="tab-btn" data-tab="study" data-i18n="tabs.study">Piano Studio</button>
-        <button type="button" class="tab-btn" data-tab="settings" data-i18n="tabs.settings">Impostazioni</button>
+        <button type="button" class="tab-btn active" data-tab="home">
+          <span class="tab-label-full" data-i18n="tabs.home">Home</span>
+          <span class="tab-label-short" data-i18n="tabs.homeShort">Home</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="manage">
+          <span class="tab-label-full" data-i18n="tabs.manage">Gestione Esami</span>
+          <span class="tab-label-short" data-i18n="tabs.manageShort">Esami</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="calendar">
+          <span class="tab-label-full" data-i18n="tabs.calendar">Calendario</span>
+          <span class="tab-label-short" data-i18n="tabs.calendarShort">Calend.</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="study">
+          <span class="tab-label-full" data-i18n="tabs.study">Piano Studio</span>
+          <span class="tab-label-short" data-i18n="tabs.studyShort">Studio</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="settings">
+          <span class="tab-label-full" data-i18n="tabs.settings">Impostazioni</span>
+          <span class="tab-label-short" data-i18n="tabs.settingsShort">Impost.</span>
+        </button>
       </nav>
 
       <main>
@@ -177,12 +198,11 @@
             <canvas id="trend-chart" height="220"></canvas>
           </section>
 
-          <section class="card full-width">
-            <div class="table-head">
-              <h2 data-i18n="home.examsTitle">Esami</h2>
-              <!-- Ordinamento completati: chip in `render()` + stato `homeCompletedSort` (delegation click in app.js) -->
+          <section class="card full-width home-exams-card">
+            <div class="table-head home-exams-head">
+              <h2 class="home-exams-title" data-i18n="home.examsTitle">Esami</h2>
               <div class="home-exams-toolbar">
-                <div class="list-filters">
+                <div class="list-filters home-exams-filters">
                   <button id="home-show-pending" class="small-filter-btn active" type="button">Da sostenere</button>
                   <button id="home-show-completed" class="small-filter-btn" type="button">Completati</button>
                 </div>
@@ -194,7 +214,7 @@
                   <span class="home-completed-sort-hint">
                     <span data-i18n="home.sortLabel">Ordina</span>
                   </span>
-                  <div class="home-sort-segments" role="presentation">
+                  <div class="home-sort-segments home-sort-scroll" role="presentation">
                     <button
                       type="button"
                       class="home-sort-segment"
@@ -235,7 +255,8 @@
                 </div>
               </div>
             </div>
-            <table>
+            <div class="home-table-wrap">
+            <table class="responsive-table home-card-table">
               <thead>
                 <tr id="home-exams-head-row">
                   <th data-i18n="tableSubject">Materia</th>
@@ -247,64 +268,67 @@
               </thead>
               <tbody id="upcoming-table-body"></tbody>
             </table>
+            </div>
           </section>
         </div>
       </section>
 
-      <section id="manage-tab" class="tab-content">
-        <div class="layout">
-          <section class="card">
-            <h2 data-i18n="manage.addExam">Aggiungi esame</h2>
-            <form id="exam-form" class="form-grid">
-              <label>
+      <section id="manage-tab" class="tab-content manage-tab">
+        <div class="layout manage-layout">
+          <section class="card manage-form-card manage-card-exam">
+            <h2 class="manage-card-title" data-i18n="manage.addExam">Aggiungi esame</h2>
+            <form id="exam-form" class="form-grid manage-form-grid">
+              <label class="manage-field">
                 <span data-i18n="manage.subject">Materia</span>
                 <input type="text" id="subject" required />
               </label>
-              <label>
+              <label class="manage-field">
                 <span data-i18n="manage.credits">Crediti (CFU)</span>
                 <input type="number" id="credits" min="1" required />
               </label>
-              <label>
+              <label class="manage-field">
                 <span data-i18n="manage.grade">Voto (18-31)</span>
                 <input type="number" id="grade" min="18" max="31" />
               </label>
-              <label>
+              <label class="manage-field">
                 <span data-i18n="manage.examDate">Data esame</span>
                 <input type="text" id="exam-date" data-i18n-placeholder="manage.examDatePh" placeholder="Seleziona data esame" />
               </label>
-              <label>
+              <label class="manage-field">
                 <span data-i18n="manage.status">Stato</span>
                 <select id="status">
                   <option value="To Take">To Take</option>
                   <option value="Completed">Completed</option>
                 </select>
               </label>
-              <div class="form-actions">
-                <button type="submit" data-i18n="manage.saveExam">Salva esame</button>
-                <button id="clear-exam-form-btn" type="button" class="ghost-btn" data-i18n="manage.clearFields">Svuota campi</button>
+              <div class="form-actions manage-form-actions">
+                <button type="submit" class="manage-btn-primary" data-i18n="manage.saveExam">Salva esame</button>
+                <button id="clear-exam-form-btn" type="button" class="ghost-btn manage-btn-secondary" data-i18n="manage.clearFields">Svuota campi</button>
               </div>
             </form>
           </section>
 
-          <section class="card">
-            <h2 data-i18n="manage.simulator">Simulatore</h2>
-            <form id="simulator-form" class="form-grid">
-              <label>
+          <section class="card manage-form-card manage-card-sim">
+            <h2 class="manage-card-title" data-i18n="manage.simulator">Simulatore</h2>
+            <form id="simulator-form" class="form-grid manage-form-grid">
+              <label class="manage-field">
                 <span data-i18n="manage.subject">Materia</span>
                 <input type="text" id="sim-subject" required />
               </label>
-              <label>
+              <label class="manage-field">
                 <span data-i18n="manage.nextCfu">CFU prossimo esame</span>
                 <input type="number" id="sim-credits" min="1" required />
               </label>
-              <label>
+              <label class="manage-field">
                 <span data-i18n="manage.grade">Voto (18-31)</span>
                 <input type="number" id="sim-grade" min="18" max="31" required />
               </label>
-              <button type="submit" data-i18n="manage.simAddBtn">Aggiungi esame simulato</button>
+              <button type="submit" class="manage-btn-primary manage-btn-block" data-i18n="manage.simAddBtn">Aggiungi esame simulato</button>
             </form>
-            <p id="simulator-result" class="simulator-result"></p>
-            <table class="responsive-table">
+            <div class="manage-sim-panel">
+            <p id="simulator-result" class="simulator-result manage-info-box"></p>
+            <div class="manage-table-wrap manage-sim-list">
+            <table class="responsive-table manage-card-table manage-sim-table">
               <thead>
                 <tr>
                   <th data-i18n="tableSubject">Materia</th>
@@ -315,16 +339,18 @@
               </thead>
               <tbody id="sim-table-body"></tbody>
             </table>
-            <button id="clear-sim-btn" class="ghost-btn" type="button" data-i18n="manage.simClear">Svuota simulazione</button>
+            </div>
+            </div>
+            <button id="clear-sim-btn" class="ghost-btn manage-btn-secondary manage-btn-block" type="button" data-i18n="manage.simClear">Svuota simulazione</button>
           </section>
 
-          <section class="card full-width">
-            <div class="table-head">
-              <h2 data-i18n="manage.allExams">Tutti gli esami</h2>
-              <button id="clear-btn" class="delete-btn" type="button" data-i18n="manage.clearAll">Svuota tutto</button>
+          <section class="card full-width manage-exams-card">
+            <div class="table-head manage-table-head">
+              <h2 class="manage-card-title" data-i18n="manage.allExams">Tutti gli esami</h2>
+              <button id="clear-btn" class="delete-btn manage-clear-btn manage-btn-secondary" type="button" data-i18n="manage.clearAll">Svuota tutto</button>
             </div>
-            <div class="table-scroll-wrap">
-            <table class="responsive-table">
+            <div class="manage-table-wrap">
+            <table class="responsive-table manage-card-table manage-exams-table">
               <thead>
                 <tr>
                   <th data-i18n="tableSubject">Materia</th>
@@ -569,6 +595,6 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
     <!-- Client modulare ES2020: vedi cartella `js/` (constants, store, dom, api, academic + app.js) -->
-    <script type="module" src="./js/app.js?v=2026-06-18-mobile-ui"></script>
+    <script type="module" src="./js/app.js?v=2026-06-20-home-exams"></script>
   </body>
 </html>

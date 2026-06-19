@@ -1,12 +1,12 @@
 node_modules
 npm-debug.log
 .git
-.gitignore
 .env
 unistrategy.db
 unistrategy.db-wal
 unistrategy.db-shm
 Database
-*.md
+backups
 .cursor
 .DS_Store
+*.log

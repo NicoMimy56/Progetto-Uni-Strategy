@@ -1,1 +1,26 @@
+# Secrets and local config
 .env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+
+# SQLite database (local dev)
+unistrategy.db
+unistrategy.db-wal
+unistrategy.db-shm
+
+# Docker persistent data
+Database/
+backups/
+
+# Logs
+*.log
+reminders.log
+
+# OS / editor
+.DS_Store
+.cursor/
+.idea/
+.vscode/

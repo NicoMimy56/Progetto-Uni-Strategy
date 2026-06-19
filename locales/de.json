@@ -2,11 +2,16 @@
   "brandTagline": "Dein akademischer Weg, voll unter Kontrolle.",
   "tabs": {
     "home": "Startseite",
+    "homeShort": "Home",
     "manage": "Prufungen",
+    "manageShort": "Pruf.",
     "calendar": "Kalender",
+    "calendarShort": "Kal.",
     "study": "Studienplan",
+    "studyShort": "Plan",
     "requests": "Wuensche",
-    "settings": "Einstellungen"
+    "settings": "Einstellungen",
+    "settingsShort": "Einst."
   },
   "requests": {
     "pageTitle": "Implementierungswuensche",
@@ -151,7 +156,9 @@
     "calcBtn": "Benotigte Note berechnen",
     "simNeed": "Benotigte Note in der nachsten Prufung: {{grade}}",
     "simTooHigh": "Mit dieser Prufung allein unrealistisch (benotigte Note > 31).",
-    "simAlreadyThere": "Du liegst schon uber dem Ziel: bestehen reicht."
+    "simAlreadyThere": "Du liegst schon uber dem Ziel: bestehen reicht.",
+    "noExams": "Noch keine Prufungen eingetragen.",
+    "noSimulated": "Noch keine simulierten Prufungen."
   },
   "calendar": {
     "title": "Prufungskalender",

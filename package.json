@@ -1,7 +1,7 @@
 {
-  "name": "progettounistrategy",
+  "name": "uni-strategy",
   "version": "1.0.0",
-  "description": "Starter implementation of your Student OS idea: - exam planning table - weighted GPA and credits tracking - target grade simulator (\"what grade do I need?\")",
+  "description": "Self-hosted web app to manage university exams, study plans, GPA, and graduation progress",
   "main": "server.js",
   "scripts": {
     "dev": "node server.js",
@@ -9,7 +9,14 @@
     "smtp:verify": "node scripts/smtp-verify.js",
     "reminders:run": "node scripts/run-calendar-reminders.js"
   },
-  "keywords": [],
+  "keywords": [
+    "university",
+    "gpa",
+    "study-planner",
+    "exams",
+    "self-hosted",
+    "sqlite"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {

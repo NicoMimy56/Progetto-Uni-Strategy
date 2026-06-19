@@ -1185,6 +1185,85 @@ function isMobileLayout() {
   return document.body.classList.contains("device-mobile");
 }
 
+/** Etichette `data-label` sulle celle tabella Gestione Esami (vista schede su mobile). */
+function applyManageExamRowLabels(tr, isEditing) {
+  if (!isMobileLayout()) {
+    tr.querySelectorAll("td[data-label]").forEach((cell) => cell.removeAttribute("data-label"));
+    return;
+  }
+  if (isEditing) {
+    const map = [
+      [".exam-edit-subject-cell", null],
+      [".exam-edit-cell-credits", t("tableCfu")],
+      [".exam-edit-cell-grade", t("tableGrade")],
+      [".exam-edit-cell-date", t("tableDate")],
+      [".exam-edit-status-cell", t("tableStatus")],
+      [".exam-edit-days-cell", t("tableDays")],
+      [".exam-edit-actions-cell", null]
+    ];
+    map.forEach(([selector, label]) => {
+      const cell = tr.querySelector(selector);
+      if (!cell) return;
+      if (label) cell.dataset.label = label;
+      else cell.removeAttribute("data-label");
+    });
+    return;
+  }
+  const labels = [
+    null,
+    t("tableCfu"),
+    t("tableGrade"),
+    t("tableDate"),
+    t("tableStatus"),
+    t("tableDays"),
+    null
+  ];
+  tr.querySelectorAll("td").forEach((cell, index) => {
+    const label = labels[index];
+    if (label) cell.dataset.label = label;
+    else cell.removeAttribute("data-label");
+  });
+}
+
+function applyManageSimRowLabels(tr) {
+  if (!isMobileLayout()) {
+    tr.querySelectorAll("td[data-label]").forEach((cell) => cell.removeAttribute("data-label"));
+    return;
+  }
+  const labels = [null, t("tableCfu"), t("tableGrade"), null];
+  tr.querySelectorAll("td").forEach((cell, index) => {
+    const label = labels[index];
+    if (label) cell.dataset.label = label;
+    else cell.removeAttribute("data-label");
+  });
+}
+
+/** Etichette per la tabella Esami in Home (vista schede su mobile). */
+function applyHomeExamRowLabels(tr, isCompletedView) {
+  if (!isMobileLayout()) {
+    tr.querySelectorAll("td[data-label]").forEach((cell) => cell.removeAttribute("data-label"));
+    return;
+  }
+  const labels = isCompletedView
+    ? [null, t("tableCfu"), t("tableDate"), t("tableGrade")]
+    : [null, t("tableCfu"), t("tableDate"), t("tableStatus"), t("tableDays")];
+  tr.querySelectorAll("td").forEach((cell, index) => {
+    const label = labels[index];
+    if (label) cell.dataset.label = label;
+    else cell.removeAttribute("data-label");
+  });
+}
+
+function appendManageEmptyRow(tbody, message, colspan = 1) {
+  const tr = document.createElement("tr");
+  tr.className = "manage-empty-row";
+  const td = document.createElement("td");
+  td.colSpan = colspan;
+  td.textContent = message;
+  tr.appendChild(td);
+  tbody.appendChild(tr);
+}
+
 function appendDayEventBadge(cell, count) {
   if (!count || count <= 0) return;
   const badge = document.createElement("span");
@@ -1668,13 +1747,16 @@ function render() {
   simTableBody.innerHTML = "";
 
   /* --- Gestione Esami (tabella completa Colonna Azione edit/delete) --- */
+  if (exams.length === 0) {
+    appendManageEmptyRow(examTableBody, t("manage.noExams"), 7);
+  }
   exams.forEach((exam) => {
     const tr = document.createElement("tr");
     if (state.editingExamId === exam.id) {
       tr.classList.add("exam-edit-row");
       tr.dataset.editing = "true";
       tr.innerHTML = `
-        <td class="exam-edit-subject-cell">${exam.subject}</td>
+        <td class="exam-edit-subject-cell manage-row-title">${exam.subject}</td>
         <td class="exam-edit-cell exam-edit-cell-credits"><input class="exam-edit-credits row-field" type="number" min="1" step="1" value="${exam.credits}" /></td>
         <td class="exam-edit-cell exam-edit-cell-grade"><input class="exam-edit-grade row-field" type="number" min="18" max="31" step="0.1" value="${exam.grade ?? ""}" /></td>
         <td class="exam-edit-cell exam-edit-cell-date"><input class="exam-edit-date row-field" type="date" value="${exam.examDate || ""}" /></td>
@@ -1695,19 +1777,21 @@ function render() {
         statusSelect.value = normalizeExamStatus(exam.status);
       }
       syncExamEditGradeInput(tr);
+      applyManageExamRowLabels(tr, true);
     } else {
       tr.innerHTML = `
-        <td>${exam.subject}</td>
+        <td class="manage-row-title">${exam.subject}</td>
         <td>${exam.credits}</td>
         <td>${exam.grade ?? "-"}</td>
         <td>${exam.examDate || "-"}</td>
         <td>${formatExamStatus(exam.status)}</td>
         <td>${formatDaysRemaining(exam)}</td>
-        <td class="exam-row-actions">
+        <td class="exam-row-actions manage-row-actions">
           <button type="button" data-id="${exam.id}" data-action="edit" class="ghost-btn">${t("manage.editBtn")}</button>
           <button type="button" data-id="${exam.id}" data-action="delete" class="delete-btn">${t("study.deleteBtn")}</button>
         </td>
       `;
+      applyManageExamRowLabels(tr, false);
     }
     examTableBody.appendChild(tr);
   });
@@ -1784,31 +1868,33 @@ function render() {
   }
 
   if (upcomingExams.length === 0) {
-    const emptyRow = document.createElement("tr");
-    emptyRow.innerHTML =
-      isCompletedView
-        ? `<td colspan="4">${t("noneCompleted")}</td>`
-        : `<td colspan="5">${t("nonePlanned")}</td>`;
-    upcomingTableBody.appendChild(emptyRow);
+    appendManageEmptyRow(
+      upcomingTableBody,
+      isCompletedView ? t("noneCompleted") : t("nonePlanned"),
+      isCompletedView ? 4 : 5
+    );
   } else {
     upcomingExams.forEach((exam) => {
       const tr = document.createElement("tr");
-      tr.innerHTML = isCompletedView
-        ? `
-          <td>${exam.subject}</td>
+      if (isCompletedView) {
+        tr.innerHTML = `
+          <td class="manage-row-title">${exam.subject}</td>
           <td>${exam.credits}</td>
           <td>${exam.examDate || "-"}</td>
           <td>${
             exam.grade != null && Number.isFinite(Number(exam.grade)) ? exam.grade : "-"
           }</td>
-        `
-        : `
-          <td>${exam.subject}</td>
+        `;
+      } else {
+        tr.innerHTML = `
+          <td class="manage-row-title">${exam.subject}</td>
           <td>${exam.credits}</td>
           <td>${exam.examDate || "-"}</td>
           <td>${formatExamStatus(exam.status)}</td>
           <td>${formatDaysRemaining(exam)}</td>
         `;
+      }
+      applyHomeExamRowLabels(tr, isCompletedView);
       upcomingTableBody.appendChild(tr);
     });
   }
@@ -1924,16 +2010,21 @@ function render() {
     ? t("manage.simCurrentVsSim", { current: gpa.toFixed(2), simulated: simGpa.toFixed(2) })
     : t("manage.simCurrentOnly", { current: gpa.toFixed(2) });
 
-  simulatedExams.forEach((exam) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${exam.subject}</td>
-      <td>${exam.credits}</td>
-      <td>${exam.plannedGrade}</td>
-      <td><button class="delete-btn" data-sim-id="${exam.id}" type="button">${t("study.deleteBtn")}</button></td>
-    `;
-    simTableBody.appendChild(tr);
-  });
+  if (simulatedExams.length === 0) {
+    appendManageEmptyRow(simTableBody, t("manage.noSimulated"), 4);
+  } else {
+    simulatedExams.forEach((exam) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="manage-row-title">${exam.subject}</td>
+        <td>${exam.credits}</td>
+        <td>${exam.plannedGrade}</td>
+        <td class="exam-row-actions manage-row-actions"><button class="delete-btn" data-sim-id="${exam.id}" type="button">${t("study.deleteBtn")}</button></td>
+      `;
+      applyManageSimRowLabels(tr);
+      simTableBody.appendChild(tr);
+    });
+  }
 }
 
 /**

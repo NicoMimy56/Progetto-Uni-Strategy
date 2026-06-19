@@ -2,11 +2,16 @@
   "brandTagline": "Il tuo percorso universitario, sotto controllo.",
   "tabs": {
     "home": "Home",
+    "homeShort": "Home",
     "manage": "Gestione Esami",
+    "manageShort": "Esami",
     "calendar": "Calendario",
+    "calendarShort": "Calend.",
     "study": "Piano Studio",
+    "studyShort": "Studio",
     "requests": "Richieste",
-    "settings": "Impostazioni"
+    "settings": "Impostazioni",
+    "settingsShort": "Impost."
   },
   "requests": {
     "pageTitle": "Richieste di implementazione",
@@ -160,7 +165,9 @@
     "simCurrentVsSim": "Media attuale: {{current}} -> Media simulata: {{simulated}}",
     "simNeed": "Voto richiesto al prossimo esame: {{grade}}",
     "simTooHigh": "Obiettivo irrealistico con questo solo esame (voto richiesto > 31).",
-    "simAlreadyThere": "Sei già sopra obiettivo: basta prendere sufficiente."
+    "simAlreadyThere": "Sei già sopra obiettivo: basta prendere sufficiente.",
+    "noExams": "Nessun esame inserito.",
+    "noSimulated": "Nessun esame simulato."
   },
   "calendar": {
     "title": "Calendario esami",
