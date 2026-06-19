@@ -405,9 +405,10 @@ function registerApiRoutes(app) {
    * --------------------------------------------------------------------------- */
   app.post("/api/study-sessions", requireAuth, (req, res) => {
     const { id, day, date, subject, description, start, end } = req.body;
+    const sessionId = String(id || "").trim() || crypto.randomUUID();
     const safeDate = typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
     const safeDay = String(day || "").trim();
-    if (!id || !subject || !start || !end || (!safeDate && !safeDay)) {
+    if (!subject || !start || !end || (!safeDate && !safeDay)) {
       return res.status(400).json({ error: "Missing study session fields." });
     }
     if (start >= end) {
@@ -432,11 +433,11 @@ function registerApiRoutes(app) {
     db.prepare(
       `INSERT INTO study_sessions (id, user_id, day, session_date, subject, description, start_time, end_time)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(id, req.user.id, normalizedDay, safeDate, subject.trim(), (description || "").trim(), start, end);
+    ).run(sessionId, req.user.id, normalizedDay, safeDate, subject.trim(), (description || "").trim(), start, end);
 
     const inserted = db
       .prepare("SELECT * FROM study_sessions WHERE id = ? AND user_id = ?")
-      .get(id, req.user.id);
+      .get(sessionId, req.user.id);
     return res.status(201).json(toStudyRow(inserted));
   });
 

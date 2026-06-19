@@ -54,10 +54,12 @@ export const prevMonthBtn = document.getElementById("prev-month");
 export const nextMonthBtn = document.getElementById("next-month");
 export const calendarTitleEl = document.getElementById("calendar-title");
 export const calendarGridEl = document.getElementById("calendar-grid");
+export const calendarAgendaListEl = document.getElementById("calendar-agenda-list");
 
 /* --- Piano studio (form + board + anteprima Home) --- */
 export const studyForm = document.getElementById("study-form");
 export const studyBoardEl = document.getElementById("study-board");
+export const studyAgendaListEl = document.getElementById("study-agenda-list");
 export const homeStudyBoardEl = document.getElementById("home-study-board");
 export const clearStudyBtn = document.getElementById("clear-study-btn");
 export const studyDateInput = document.getElementById("study-date");

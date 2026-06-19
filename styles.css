@@ -818,8 +818,8 @@ html.theme-dark .home-sort-segment.active {
 
 .calendar-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.45rem;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.35rem;
   margin-top: 0.75rem;
 }
 
@@ -830,10 +830,19 @@ html.theme-dark .home-sort-segment.active {
   min-height: 74px;
   padding: 0.4rem;
   background: #fff;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .calendar-weekday {
-  display: none;
+  display: block;
+  min-height: auto;
+  text-align: center;
+  color: #2f4e83;
+  background: #f4f7fc;
+  font-weight: 600;
+  font-size: 0.72rem;
+  padding: 0.35rem 0.15rem;
 }
 
 .calendar-day.today {
@@ -863,11 +872,17 @@ html.theme-dark .home-sort-segment.active {
 .study-board {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 0.5rem;
+  gap: 0.35rem;
+  min-width: 0;
 }
 
 #home-study-board {
   grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+#home-study-board.home-week-board-mobile {
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
 }
 
 .home-week-day {
@@ -876,6 +891,8 @@ html.theme-dark .home-sort-segment.active {
   border-radius: 10px;
   padding: 0.45rem;
   min-height: 120px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .home-week-day.today {
@@ -893,6 +910,17 @@ html.theme-dark .home-sort-segment.active {
   padding: 0.35rem;
   border-radius: 8px;
   font-size: 0.72rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.home-week-item strong,
+.study-item strong,
+.exam-chip,
+.agenda-item strong {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .home-week-item.study {
@@ -937,6 +965,184 @@ html.theme-dark .home-sort-segment.active {
   color: var(--muted);
   font-size: 0.7rem;
   margin: 0;
+}
+
+.day-event-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.15rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.month-agenda-list {
+  display: none;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.month-agenda-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.agenda-day-group {
+  margin-bottom: 0.85rem;
+}
+
+.agenda-day-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #2f4e83;
+  text-transform: capitalize;
+}
+
+.agenda-day-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.agenda-item {
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  min-width: 0;
+}
+
+.agenda-item-exam {
+  background: var(--home-study-exam-bg, #ffe8ea);
+}
+
+.agenda-item-study {
+  background: var(--home-study-session-bg, #eaf1ff);
+}
+
+.agenda-item-meta {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+.agenda-item-description {
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.agenda-item .delete-btn {
+  margin-top: 0.4rem;
+  width: 100%;
+}
+
+.table-scroll-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.responsive-table {
+  min-width: 100%;
+}
+
+/* --- Layout mobile: topbar fissa, griglia compatta, agenda sotto calendario --- */
+body.device-mobile .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 120;
+  width: 100%;
+  max-width: 100%;
+}
+
+body.device-mobile #app-shell {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: clip;
+}
+
+body.device-mobile main,
+body.device-mobile .layout,
+body.device-mobile .card.full-width {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+body.device-mobile #manage-tab .table-head {
+  width: 100%;
+  align-items: flex-start;
+}
+
+body.device-mobile .home-week-board-mobile .home-week-day {
+  min-height: auto;
+}
+
+body.device-mobile .home-week-board-mobile .home-week-day h3 {
+  font-size: 0.88rem;
+  margin-bottom: 0.45rem;
+}
+
+body.device-mobile .home-week-board-mobile .home-week-item {
+  font-size: 0.8rem;
+  padding: 0.5rem 0.6rem;
+}
+
+body.device-mobile .month-agenda-list {
+  display: block;
+}
+
+body.device-mobile .calendar-grid-compact,
+body.device-mobile .study-board.calendar-grid-compact {
+  gap: 0.2rem;
+}
+
+body.device-mobile .calendar-grid-compact .calendar-weekday {
+  font-size: 0.58rem;
+  padding: 0.25rem 0.05rem;
+  border-radius: 8px;
+}
+
+body.device-mobile .calendar-grid-compact .calendar-day {
+  min-height: 0;
+  aspect-ratio: 1;
+  padding: 0.12rem;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+body.device-mobile .calendar-grid-compact .calendar-day-number {
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+body.device-mobile .calendar-grid-compact .calendar-day.muted {
+  opacity: 0.25;
+  min-height: 0;
+}
+
+body.device-mobile .calendar-grid-compact .study-day-out-month {
+  aspect-ratio: auto;
+  min-height: 2rem;
+  grid-column: 1 / -1;
 }
 
 .study-day-past {

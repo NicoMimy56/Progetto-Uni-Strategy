@@ -304,7 +304,7 @@
               <button type="submit" data-i18n="manage.simAddBtn">Aggiungi esame simulato</button>
             </form>
             <p id="simulator-result" class="simulator-result"></p>
-            <table>
+            <table class="responsive-table">
               <thead>
                 <tr>
                   <th data-i18n="tableSubject">Materia</th>
@@ -323,7 +323,8 @@
               <h2 data-i18n="manage.allExams">Tutti gli esami</h2>
               <button id="clear-btn" class="delete-btn" type="button" data-i18n="manage.clearAll">Svuota tutto</button>
             </div>
-            <table>
+            <div class="table-scroll-wrap">
+            <table class="responsive-table">
               <thead>
                 <tr>
                   <th data-i18n="tableSubject">Materia</th>
@@ -337,6 +338,7 @@
               </thead>
               <tbody id="exam-table-body"></tbody>
             </table>
+            </div>
           </section>
         </div>
       </section>
@@ -353,6 +355,7 @@
               </div>
             </div>
             <div id="calendar-grid" class="calendar-grid"></div>
+            <div id="calendar-agenda-list" class="month-agenda-list" aria-live="polite"></div>
           </section>
         </div>
       </section>
@@ -376,11 +379,11 @@
               </label>
               <label>
                 <span data-i18n="study.startPh">Inizio</span>
-                <input type="text" id="study-start" data-i18n-placeholder="study.startPh" placeholder="Ora inizio" required />
+                <input type="text" id="study-start" value="09:00" data-i18n-placeholder="study.startPh" placeholder="Ora inizio" required />
               </label>
               <label>
                 <span data-i18n="study.endPh">Fine</span>
-                <input type="text" id="study-end" data-i18n-placeholder="study.endPh" placeholder="Ora fine" required />
+                <input type="text" id="study-end" value="10:00" data-i18n-placeholder="study.endPh" placeholder="Ora fine" required />
               </label>
               <button type="submit" data-i18n="study.addBtn">Aggiungi</button>
             </form>
@@ -405,6 +408,7 @@
               <button id="clear-study-btn" class="delete-btn" type="button" data-i18n="study.clearPlan">Svuota piano</button>
             </div>
             <div id="study-board" class="study-board"></div>
+            <div id="study-agenda-list" class="month-agenda-list" aria-live="polite"></div>
           </section>
         </div>
       </section>
@@ -565,6 +569,6 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
     <!-- Client modulare ES2020: vedi cartella `js/` (constants, store, dom, api, academic + app.js) -->
-    <script type="module" src="./js/app.js?v=2026-05-28-past-days-locked"></script>
+    <script type="module" src="./js/app.js?v=2026-06-18-mobile-ui"></script>
   </body>
 </html>

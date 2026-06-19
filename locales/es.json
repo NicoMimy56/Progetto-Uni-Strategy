@@ -156,7 +156,9 @@
   "calendar": {
     "title": "Calendario de examenes",
     "prev": "Mes anterior",
-    "next": "Mes siguiente"
+    "next": "Mes siguiente",
+    "monthAgenda": "Citas del mes",
+    "noEventsMonth": "No hay examenes ni sesiones de estudio este mes."
   },
   "study": {
     "newSession": "Nueva sesion de estudio",
@@ -176,7 +178,10 @@
     "filterAll": "Todas",
     "clearPlan": "Vaciar plan",
     "noSession": "Sin sesiones.",
-    "deleteBtn": "Eliminar"
+    "deleteBtn": "Eliminar",
+    "formIncomplete": "Completa materia, fecha y hora de inicio/fin antes de anadir la sesion.",
+    "endBeforeStart": "La hora de fin debe ser posterior a la de inicio.",
+    "pastDateBlocked": "No puedes anadir sesiones en fechas pasadas."
   },
   "status": {
     "toTake": "Por hacer",

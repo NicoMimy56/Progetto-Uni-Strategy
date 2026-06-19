@@ -156,7 +156,9 @@
   "calendar": {
     "title": "Calendar examene",
     "prev": "Luna precedenta",
-    "next": "Luna urmatoare"
+    "next": "Luna urmatoare",
+    "monthAgenda": "Programul lunii",
+    "noEventsMonth": "Niciun examen sau sesiune de studiu in aceasta luna."
   },
   "study": {
     "newSession": "Sesiune noua de studiu",
@@ -176,7 +178,10 @@
     "filterAll": "Toate",
     "clearPlan": "Goleste planul",
     "noSession": "Nicio sesiune.",
-    "deleteBtn": "Sterge"
+    "deleteBtn": "Sterge",
+    "formIncomplete": "Completeaza materia, data si orele de inceput/sfarsit inainte de a adauga sesiunea.",
+    "endBeforeStart": "Ora de sfarsit trebuie sa fie dupa ora de inceput.",
+    "pastDateBlocked": "Nu poti adauga sesiuni in zile trecute."
   },
   "status": {
     "toTake": "De sustinut",

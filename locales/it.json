@@ -165,7 +165,9 @@
   "calendar": {
     "title": "Calendario esami",
     "prev": "Mese prec.",
-    "next": "Mese succ."
+    "next": "Mese succ.",
+    "monthAgenda": "Appuntamenti del mese",
+    "noEventsMonth": "Nessun esame o sessione studio in questo mese."
   },
   "study": {
     "newSession": "Nuova sessione studio",
@@ -185,7 +187,10 @@
     "filterAll": "Tutte",
     "clearPlan": "Svuota piano",
     "noSession": "Nessuna sessione.",
-    "deleteBtn": "Elimina"
+    "deleteBtn": "Elimina",
+    "formIncomplete": "Compila materia, data e orario (inizio e fine) prima di aggiungere la sessione.",
+    "endBeforeStart": "L'orario di fine deve essere dopo l'orario di inizio.",
+    "pastDateBlocked": "Non puoi aggiungere sessioni su date passate."
   },
   "status": {
     "toTake": "Da sostenere",

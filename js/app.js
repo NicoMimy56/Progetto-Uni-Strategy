@@ -96,8 +96,10 @@ import {
   nextMonthBtn,
   calendarTitleEl,
   calendarGridEl,
+  calendarAgendaListEl,
   studyForm,
   studyBoardEl,
+  studyAgendaListEl,
   homeStudyBoardEl,
   clearStudyBtn,
   studyDateInput,
@@ -136,7 +138,7 @@ import {
   authResendBtn
 } from "./dom.js";
 import { apiRequest } from "./api.js";
-import { weightedGpa, simulatedGpa, daysRemaining } from "./academic.js";
+import { weightedGpa, simulatedGpa, daysRemaining, generateClientId } from "./academic.js";
 
 /** Mappa preset tema (chiave THEME_PRESETS) → percorso SVG logo in topbar e schermata auth. */
 const HEADER_LOGO_BY_THEME = {
@@ -590,7 +592,7 @@ function setupStudyTimePicker() {
     }
   });
 
-  [studyStartInput, studyEndInput].forEach((input) => {
+  [studyStartInput, studyEndInput].filter(Boolean).forEach((input) => {
     input.addEventListener("focus", () => showStudyTimePicker(input));
     input.addEventListener("click", () => showStudyTimePicker(input));
     input.addEventListener("input", () => {
@@ -687,31 +689,67 @@ function bindExamEditRowInputs() {
   });
 }
 
+/** Legge la data sessione studio da flatpickr o dall’input nativo. */
+function getStudyDateValue() {
+  if (!studyDateInput) return "";
+  const picker = studyDateInput._flatpickr;
+  if (picker?.selectedDates?.[0]) {
+    return toLocalIsoDate(picker.selectedDates[0]);
+  }
+  return String(studyDateInput.value || "").trim();
+}
+
+/** Orari predefiniti dopo reset form piano studio. */
+function resetStudyFormDefaults() {
+  if (studyStartInput) studyStartInput.value = "09:00";
+  if (studyEndInput) studyEndInput.value = "10:00";
+  if (studyDateInput?._flatpickr) {
+    studyDateInput._flatpickr.setDate(getTodayIsoDate(), true);
+  } else if (studyDateInput) {
+    studyDateInput.value = getTodayIsoDate();
+    if (studyDateInput.type === "date") {
+      studyDateInput.min = getTodayIsoDate();
+    }
+  }
+}
+
 /** Reinizializza date picker esame (+ crea picker orario studio se assente). */
 function setupDateTimePickers() {
   if (typeof flatpickr === "function") {
     destroyDatePickers();
 
     const useIt = getProfileForUi().language === "it";
-    flatpickr(examDateInput, {
-      dateFormat: "Y-m-d",
-      altInput: true,
-      altFormat: useIt ? "d/m/Y" : "m/d/Y",
-      allowInput: false,
-      ...(useIt && flatpickr.l10ns?.it ? { locale: flatpickr.l10ns.it } : {})
-    });
+    if (examDateInput) {
+      flatpickr(examDateInput, {
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: useIt ? "d/m/Y" : "m/d/Y",
+        allowInput: true,
+        ...(useIt && flatpickr.l10ns?.it ? { locale: flatpickr.l10ns.it } : {})
+      });
+    }
     if (studyDateInput) {
       flatpickr(studyDateInput, {
         dateFormat: "Y-m-d",
         altInput: true,
         altFormat: useIt ? "d/m/Y" : "m/d/Y",
-        allowInput: false,
+        allowInput: true,
         defaultDate: "today",
         minDate: "today",
         ...(useIt && flatpickr.l10ns?.it ? { locale: flatpickr.l10ns.it } : {})
       });
     }
+  } else {
+    [examDateInput, studyDateInput].forEach((el) => {
+      if (!el) return;
+      el.type = "date";
+    });
+    if (studyDateInput) {
+      studyDateInput.value = getTodayIsoDate();
+      studyDateInput.min = getTodayIsoDate();
+    }
   }
+  resetStudyFormDefaults();
   setupStudyTimePicker();
 }
 
@@ -1142,6 +1180,132 @@ function buildStudySessionsByDate(monthReference, year, month, restrictToMonth) 
   return byDate;
 }
 
+/** true se il layout mobile è attivo (classe impostata da `setDeviceMode`). */
+function isMobileLayout() {
+  return document.body.classList.contains("device-mobile");
+}
+
+function appendDayEventBadge(cell, count) {
+  if (!count || count <= 0) return;
+  const badge = document.createElement("span");
+  badge.className = "day-event-badge";
+  badge.setAttribute("aria-label", String(count));
+  badge.textContent = String(count);
+  cell.appendChild(badge);
+}
+
+function formatAgendaDayTitle(isoDate, localeTag) {
+  const d = new Date(`${isoDate}T00:00:00`);
+  return d.toLocaleDateString(localeTag, { weekday: "long", day: "numeric", month: "long" });
+}
+
+/**
+ * Elenco appuntamenti sotto la griglia mensile (mobile): esami + sessioni studio per giorno.
+ */
+function renderMonthAgendaList(containerEl, datesWithEvents, localeTag, { showDeleteButton = false } = {}) {
+  if (!containerEl) return;
+  containerEl.innerHTML = "";
+  if (!isMobileLayout()) return;
+
+  const heading = document.createElement("h3");
+  heading.className = "month-agenda-title";
+  heading.textContent = t("calendar.monthAgenda");
+  containerEl.appendChild(heading);
+
+  if (!datesWithEvents.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-text";
+    empty.textContent = t("calendar.noEventsMonth");
+    containerEl.appendChild(empty);
+    return;
+  }
+
+  datesWithEvents.forEach(({ isoDate, exams, sessions }) => {
+    const group = document.createElement("article");
+    group.className = "agenda-day-group";
+    const title = document.createElement("h4");
+    title.className = "agenda-day-title";
+    title.textContent = formatAgendaDayTitle(isoDate, localeTag);
+    group.appendChild(title);
+
+    const list = document.createElement("ul");
+    list.className = "agenda-day-list";
+
+    exams.forEach((exam) => {
+      const li = document.createElement("li");
+      li.className = "agenda-item agenda-item-exam";
+      li.innerHTML = `
+        <strong>${exam.subject}</strong>
+        <span class="agenda-item-meta">${t("home.examsTitle")} · ${formatExamStatus(exam.status)}</span>
+      `;
+      list.appendChild(li);
+    });
+
+    sessions.forEach((session) => {
+      const sessionPast = isStudySessionPast(session);
+      const canDelete = showDeleteButton && !sessionPast;
+      const li = document.createElement("li");
+      li.className = "agenda-item agenda-item-study";
+      const descriptionHtml = session.description
+        ? `<p class="agenda-item-description">${session.description}</p>`
+        : "";
+      const deleteBtnHtml = canDelete
+        ? `<button class="delete-btn" data-session-id="${session.id}" type="button">${t("study.deleteBtn")}</button>`
+        : "";
+      li.innerHTML = `
+        <strong>${session.subject}</strong>
+        <span class="agenda-item-meta">${session.start} – ${session.end}</span>
+        ${descriptionHtml}
+        ${deleteBtnHtml}
+      `;
+      list.appendChild(li);
+    });
+
+    group.appendChild(list);
+    containerEl.appendChild(group);
+  });
+}
+
+function collectCalendarAgendaForMonth(year, month, exams, studyByDate) {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const rows = [];
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const isoDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const dayExams = exams.filter((exam) => exam.examDate === isoDate && exam.status !== "Completed");
+    const sessions = (studyByDate.get(isoDate) || []).sort((a, b) => a.start.localeCompare(b.start));
+    if (dayExams.length || sessions.length) {
+      rows.push({ isoDate, exams: dayExams, sessions });
+    }
+  }
+  return rows;
+}
+
+/** Aggiunge chip esami o badge compatto nella cella calendario. */
+function fillCalendarDayCell(cell, exams, dayIso, sessions, compact) {
+  const dayExams = exams.filter((exam) => exam.examDate === dayIso && exam.status !== "Completed");
+  if (compact) {
+    appendDayEventBadge(cell, dayExams.length + sessions.length);
+    return;
+  }
+  dayExams.forEach((exam) => cell.appendChild(createCalendarExamChip(exam)));
+  appendStudySessionsToCalendarCell(cell, sessions, { draggable: false, showDeleteButton: false });
+}
+
+/** Aggiunge sessioni/esami nella cella piano studio o badge compatto. */
+function fillStudyDayCell(cell, calendarExams, isoDate, sessions, compact, showDeleteButton) {
+  const dayExams = calendarExams.filter((exam) => exam.examDate === isoDate);
+  const dayIsPast = isPastIsoDate(isoDate);
+  if (compact) {
+    appendDayEventBadge(cell, dayExams.length + sessions.length);
+    return;
+  }
+  appendCalendarExamsToCell(cell, calendarExams, isoDate);
+  appendStudySessionsToCalendarCell(cell, sessions, {
+    draggable: showDeleteButton && !dayIsPast,
+    showDeleteButton: showDeleteButton && !dayIsPast
+  });
+}
+
 function createCalendarExamChip(exam) {
   const chip = document.createElement("div");
   chip.className = "exam-chip";
@@ -1210,6 +1374,8 @@ function renderCalendar(exams) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const studyByDate = buildStudySessionsByDate(currentCalendarDate, year, month, true);
+  const compact = isMobileLayout();
+  calendarGridEl.classList.toggle("calendar-grid-compact", compact);
 
   for (let i = 0; i < startIndex; i += 1) {
     const empty = document.createElement("div");
@@ -1236,12 +1402,18 @@ function renderCalendar(exams) {
     dayNumber.textContent = String(day);
     cell.appendChild(dayNumber);
 
-    appendCalendarExamsToCell(cell, exams, dayIso);
     const sessions = (studyByDate.get(dayIso) || []).sort((a, b) => a.start.localeCompare(b.start));
-    appendStudySessionsToCalendarCell(cell, sessions, { draggable: false, showDeleteButton: false });
+    fillCalendarDayCell(cell, exams, dayIso, sessions, compact);
 
     calendarGridEl.appendChild(cell);
   }
+
+  const calendarExams = exams.filter((exam) => exam.status !== "Completed" && exam.examDate);
+  renderMonthAgendaList(
+    calendarAgendaListEl,
+    collectCalendarAgendaForMonth(year, month, calendarExams, studyByDate),
+    localeTag
+  );
 }
 
 /** Tab Piano Studio: colonne giorni con pulsanti elimina sessione. */
@@ -1255,6 +1427,7 @@ function renderHomeStudyPlan() {
   studyFilterWrapEl?.classList.add("hidden");
   homeStudyBoardEl.innerHTML = "";
   homeStudyBoardEl.classList.add("home-week-board");
+  homeStudyBoardEl.classList.toggle("home-week-board-mobile", isMobileLayout());
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const locale = CALENDAR_LOCALES[state.profile.language] || "it-IT";
@@ -1297,7 +1470,10 @@ function renderHomeStudyPlan() {
       dayCol.appendChild(item);
     });
     if (!dayExams.length && !sessions.length) {
-      dayCol.innerHTML += `<p class="empty-text">${t("study.noSession")}</p>`;
+      const empty = document.createElement("p");
+      empty.className = "empty-text";
+      empty.textContent = t("study.noSession");
+      dayCol.appendChild(empty);
     }
     homeStudyBoardEl.appendChild(dayCol);
   }
@@ -1381,6 +1557,9 @@ function renderStudyBoard(containerEl, showDeleteButton, monthReference) {
     studyFilterAllBtn?.classList.toggle("active", ui.studyFilterMode === "all");
   }
 
+  const compact = isMobileLayout();
+  containerEl.classList.toggle("calendar-grid-compact", compact);
+
   CALENDAR_WEEK_DAYS.forEach((dayKey) => {
     const head = document.createElement("div");
     head.className = "calendar-weekday";
@@ -1413,40 +1592,56 @@ function renderStudyBoard(containerEl, showDeleteButton, monthReference) {
     dayNumber.className = "calendar-day-number";
     dayNumber.textContent = String(day);
     cell.appendChild(dayNumber);
-    appendCalendarExamsToCell(cell, calendarExams, isoDate);
-    appendStudySessionsToCalendarCell(cell, sessions, {
-      draggable: showDeleteButton && !dayIsPast,
-      showDeleteButton: showDeleteButton && !dayIsPast
-    });
+    fillStudyDayCell(cell, calendarExams, isoDate, sessions, compact, showDeleteButton);
     containerEl.appendChild(cell);
   }
 
-  if (!showDeleteButton || ui.studyFilterMode !== "all") return;
-  const extraDates = Array.from(byDate.keys())
-    .filter((isoDate) => {
-      const d = new Date(`${isoDate}T00:00:00`);
-      return d.getFullYear() !== year || d.getMonth() !== month;
-    })
-    .sort();
-  extraDates.forEach((isoDate) => {
-    const sessions = (byDate.get(isoDate) || []).sort((a, b) => a.start.localeCompare(b.start));
-    const dayIsPast = isPastIsoDate(isoDate);
-    const cell = document.createElement("div");
-    cell.className = "calendar-day study-day-out-month";
-    if (!dayIsPast) cell.classList.add("study-dropzone");
-    if (dayIsPast) cell.classList.add("study-day-past");
-    cell.dataset.studyDate = isoDate;
-    const label = document.createElement("p");
-    label.className = "calendar-day-number";
-    label.textContent = new Date(`${isoDate}T00:00:00`).toLocaleDateString(CALENDAR_LOCALES[state.profile.language] || "it-IT");
-    cell.appendChild(label);
-    appendCalendarExamsToCell(cell, calendarExams, isoDate);
-    appendStudySessionsToCalendarCell(cell, sessions, {
-      draggable: !dayIsPast,
-      showDeleteButton: !dayIsPast
+  if (showDeleteButton && ui.studyFilterMode === "all") {
+    const extraDates = Array.from(byDate.keys())
+      .filter((isoDate) => {
+        const d = new Date(`${isoDate}T00:00:00`);
+        return d.getFullYear() !== year || d.getMonth() !== month;
+      })
+      .sort();
+    extraDates.forEach((isoDate) => {
+      const sessions = (byDate.get(isoDate) || []).sort((a, b) => a.start.localeCompare(b.start));
+      const dayIsPast = isPastIsoDate(isoDate);
+      const cell = document.createElement("div");
+      cell.className = "calendar-day study-day-out-month";
+      if (!dayIsPast) cell.classList.add("study-dropzone");
+      if (dayIsPast) cell.classList.add("study-day-past");
+      cell.dataset.studyDate = isoDate;
+      const label = document.createElement("p");
+      label.className = "calendar-day-number";
+      label.textContent = new Date(`${isoDate}T00:00:00`).toLocaleDateString(localeTag);
+      cell.appendChild(label);
+      fillStudyDayCell(cell, calendarExams, isoDate, sessions, compact, showDeleteButton);
+      containerEl.appendChild(cell);
     });
-    containerEl.appendChild(cell);
-  });
+  }
+
+  if (showDeleteButton) {
+    const agendaRows = collectCalendarAgendaForMonth(year, month, calendarExams, byDate);
+    if (ui.studyFilterMode === "all") {
+      Array.from(byDate.keys())
+        .filter((isoDate) => {
+          const d = new Date(`${isoDate}T00:00:00`);
+          return d.getFullYear() !== year || d.getMonth() !== month;
+        })
+        .sort()
+        .forEach((isoDate) => {
+          const dayExams = calendarExams.filter((exam) => exam.examDate === isoDate);
+          const sessions = (byDate.get(isoDate) || []).sort((a, b) => a.start.localeCompare(b.start));
+          if (dayExams.length || sessions.length) {
+            agendaRows.push({ isoDate, exams: dayExams, sessions });
+          }
+        });
+      agendaRows.sort((a, b) => a.isoDate.localeCompare(b.isoDate));
+    }
+    renderMonthAgendaList(studyAgendaListEl, agendaRows, localeTag, { showDeleteButton: true });
+  } else if (studyAgendaListEl) {
+    studyAgendaListEl.innerHTML = "";
+  }
 }
 
 /**
@@ -1880,19 +2075,29 @@ nextMonthBtn.addEventListener("click", () => {
   renderCalendar(getExams());
 });
 
-/** Aggiungi sessione studio — UUID generato nel client come richiesto da API */
-studyForm.addEventListener("submit", async (event) => {
+/** Aggiungi sessione studio — UUID generato nel client (fallback se HTTP non sicuro). */
+studyForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const date = studyDateInput?.value ?? "";
-  const subject = document.getElementById("study-subject").value.trim();
-  const description = document.getElementById("study-description").value.trim();
-  const start = document.getElementById("study-start").value;
-  const end = document.getElementById("study-end").value;
-  if (!subject || !date || !start || !end || start >= end) return;
-  if (isPastIsoDate(date)) return;
+  const date = getStudyDateValue();
+  const subject = document.getElementById("study-subject")?.value.trim() ?? "";
+  const description = document.getElementById("study-description")?.value.trim() ?? "";
+  const start = studyStartInput?.value.trim() ?? "";
+  const end = studyEndInput?.value.trim() ?? "";
+  if (!subject || !date || !start || !end) {
+    alert(t("study.formIncomplete"));
+    return;
+  }
+  if (start >= end) {
+    alert(t("study.endBeforeStart"));
+    return;
+  }
+  if (isPastIsoDate(date)) {
+    alert(t("study.pastDateBlocked"));
+    return;
+  }
 
   const session = {
-    id: crypto.randomUUID(),
+    id: generateClientId(),
     date,
     subject,
     description,
@@ -1910,6 +2115,7 @@ studyForm.addEventListener("submit", async (event) => {
       currentStudyCalendarDate.setFullYear(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
     }
     studyForm.reset();
+    resetStudyFormDefaults();
     render();
   } catch (error) {
     alert(error.message);
@@ -1936,24 +2142,30 @@ studyFilterAllBtn?.addEventListener("click", () => {
   renderStudyPlan();
 });
 
-/** Rimozione singola sessione studio: il pulsante ha `data-session-id` assegnato in `renderStudyBoard` nel template HTML della riga. */
-studyBoardEl.addEventListener("click", async (event) => {
-  const target = event.target;
-  if (target.tagName !== "BUTTON") return;
-  const id = target.dataset.sessionId;
+/** Elimina una sessione studio dall’elenco o dalla griglia. */
+async function deleteStudySessionById(id) {
   const session = getStudyPlan().find((item) => item.id === id);
   if (!session || isStudySessionPast(session)) return;
+  await apiRequest(`/api/study-sessions/${id}`, { method: "DELETE" });
+  saveStudyPlan(getStudyPlan().filter((item) => item.id !== id));
+  render();
+}
+
+async function handleStudySessionDeleteClick(event) {
+  const target = event.target;
+  if (!(target instanceof HTMLButtonElement) || !target.dataset.sessionId) return;
   try {
-    await apiRequest(`/api/study-sessions/${id}`, { method: "DELETE" });
-    const updated = getStudyPlan().filter((item) => item.id !== id);
-    saveStudyPlan(updated);
-    render();
+    await deleteStudySessionById(target.dataset.sessionId);
   } catch (error) {
     alert(error.message);
   }
-});
+}
 
-studyBoardEl.addEventListener("dragstart", (event) => {
+/** Rimozione singola sessione studio: griglia mensile o elenco agenda mobile. */
+studyBoardEl?.addEventListener("click", handleStudySessionDeleteClick);
+studyAgendaListEl?.addEventListener("click", handleStudySessionDeleteClick);
+
+studyBoardEl?.addEventListener("dragstart", (event) => {
   const item = event.target.closest(".study-item[data-session-id]");
   if (!item) return;
   const session = getStudyPlan().find((s) => s.id === item.dataset.sessionId);
@@ -1966,23 +2178,23 @@ studyBoardEl.addEventListener("dragstart", (event) => {
   item.classList.add("study-item-dragging");
 });
 
-studyBoardEl.addEventListener("dragend", (event) => {
+studyBoardEl?.addEventListener("dragend", (event) => {
   const item = event.target.closest(".study-item");
   if (item) item.classList.remove("study-item-dragging");
   ui.draggingStudySessionId = null;
-  studyBoardEl.querySelectorAll(".study-dropzone-active").forEach((el) => el.classList.remove("study-dropzone-active"));
+  studyBoardEl?.querySelectorAll(".study-dropzone-active").forEach((el) => el.classList.remove("study-dropzone-active"));
 });
 
-studyBoardEl.addEventListener("dragover", (event) => {
+studyBoardEl?.addEventListener("dragover", (event) => {
   const zone = event.target.closest(".study-dropzone[data-study-date]");
   if (!zone || !ui.draggingStudySessionId || isPastIsoDate(zone.dataset.studyDate)) return;
   event.preventDefault();
   event.dataTransfer.dropEffect = "move";
-  studyBoardEl.querySelectorAll(".study-dropzone-active").forEach((el) => el.classList.remove("study-dropzone-active"));
+  studyBoardEl?.querySelectorAll(".study-dropzone-active").forEach((el) => el.classList.remove("study-dropzone-active"));
   zone.classList.add("study-dropzone-active");
 });
 
-studyBoardEl.addEventListener("drop", async (event) => {
+studyBoardEl?.addEventListener("drop", async (event) => {
   const zone = event.target.closest(".study-dropzone[data-study-date]");
   const sessionId = ui.draggingStudySessionId;
   if (!zone || !sessionId) return;
@@ -2002,12 +2214,12 @@ studyBoardEl.addEventListener("drop", async (event) => {
     alert(error.message);
   } finally {
     ui.draggingStudySessionId = null;
-    studyBoardEl.querySelectorAll(".study-dropzone-active").forEach((el) => el.classList.remove("study-dropzone-active"));
+    studyBoardEl?.querySelectorAll(".study-dropzone-active").forEach((el) => el.classList.remove("study-dropzone-active"));
   }
 });
 
 /** DELETE REST che elimina tutte le righe piano studio sul server dell’utente corrente */
-clearStudyBtn.addEventListener("click", async () => {
+clearStudyBtn?.addEventListener("click", async () => {
   try {
     await apiRequest("/api/study-sessions", { method: "DELETE" });
     saveStudyPlan(getStudyPlan().filter((session) => isStudySessionPast(session)));
@@ -2426,4 +2638,7 @@ initializeApp();
 window.addEventListener("resize", () => {
   setDeviceMode();
   scheduleTrendChartDraw();
+  if (appShellEl && !appShellEl.classList.contains("hidden")) {
+    render();
+  }
 });

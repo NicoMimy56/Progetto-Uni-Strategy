@@ -165,7 +165,9 @@
   "calendar": {
     "title": "Exam calendar",
     "prev": "Prev month",
-    "next": "Next month"
+    "next": "Next month",
+    "monthAgenda": "This month's schedule",
+    "noEventsMonth": "No exams or study sessions this month."
   },
   "study": {
     "newSession": "New study session",
@@ -185,7 +187,10 @@
     "filterAll": "All",
     "clearPlan": "Clear plan",
     "noSession": "No sessions.",
-    "deleteBtn": "Delete"
+    "deleteBtn": "Delete",
+    "formIncomplete": "Fill in subject, date, and start/end time before adding the session.",
+    "endBeforeStart": "End time must be after start time.",
+    "pastDateBlocked": "You cannot add sessions on past dates."
   },
   "status": {
     "toTake": "To take",

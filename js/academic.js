@@ -66,3 +66,23 @@ export function daysRemaining(dateStr) {
   target.setHours(0, 0, 0, 0);
   return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
 }
+
+/**
+ * UUID lato client per nuove sessioni studio. Su HTTP (LAN/Tailscale) `crypto.randomUUID`
+ * non è disponibile: si usa un fallback compatibile.
+ * @returns {string}
+ */
+export function generateClientId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    try {
+      return crypto.randomUUID();
+    } catch {
+      /* contesto non sicuro (es. http://100.x.x.x) */
+    }
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
+    const random = (Math.random() * 16) | 0;
+    const value = char === "x" ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
+}

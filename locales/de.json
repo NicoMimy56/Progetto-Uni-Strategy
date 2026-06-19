@@ -156,7 +156,9 @@
   "calendar": {
     "title": "Prufungskalender",
     "prev": "Vorheriger Monat",
-    "next": "Nachster Monat"
+    "next": "Nachster Monat",
+    "monthAgenda": "Termine im Monat",
+    "noEventsMonth": "Keine Prufungen oder Lernsitzungen in diesem Monat."
   },
   "study": {
     "newSession": "Neue Lerneinheit",
@@ -176,7 +178,10 @@
     "filterAll": "Alle",
     "clearPlan": "Plan leeren",
     "noSession": "Keine Einheiten.",
-    "deleteBtn": "Loschen"
+    "deleteBtn": "Loschen",
+    "formIncomplete": "Bitte Fach, Datum und Start-/Endzeit ausfullen, bevor du die Sitzung hinzufugst.",
+    "endBeforeStart": "Die Endzeit muss nach der Startzeit liegen.",
+    "pastDateBlocked": "Sitzungen konnen nicht fur vergangene Daten hinzugefugt werden."
   },
   "status": {
     "toTake": "Zu machen",
